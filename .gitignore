@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.key
+*.keystore
+dist/
+.next/
+*.log
+server.out
