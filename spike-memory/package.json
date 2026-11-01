@@ -1,0 +1,1 @@
+{"name":"spike-memory","private":true,"type":"module","dependencies":{"@mysten-incubation/memwal":"^0.1.12","dotenv":"^18.0.9"}}

@@ -17,3 +17,6 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Our target: Wed 4 Nov.
   Transaction: 8hgyCgD3Rx4As1b72rR5Yk9zY4YvufZX77XonY8WWcsm
 - Still to prove: the same payment on Mainnet, Walrus Memory writes, Tatum Sui reads, real bundle purchase.
 - Note: public Sui fullnodes have dropped JSON-RPC, so check which interface Tatum's Sui RPC offers.
+- Tatum Sui Mainnet read works through the GraphQL endpoint (/graphql). A plain JSON-RPC POST to the gateway returned 404; gRPC not tested yet.
+- First Walrus Memory saved on Mainnet and recalled through the managed relayer (1 of 10). Blob: oAZ4XgWeV79VAYCAv_hhUsif-eLQjNfvnrBEHgXlTZQ
+- Node is 24.20.0; the Walrus docs ask for 24.22.1+. It ran fine, but upgrade before the final build.
