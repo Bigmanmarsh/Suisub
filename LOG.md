@@ -20,3 +20,5 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Our target: Wed 4 Nov.
 - Tatum Sui Mainnet read works through the GraphQL endpoint (/graphql). A plain JSON-RPC POST to the gateway returned 404; gRPC not tested yet.
 - First Walrus Memory saved on Mainnet and recalled through the managed relayer (1 of 10). Blob: oAZ4XgWeV79VAYCAv_hhUsif-eLQjNfvnrBEHgXlTZQ
 - Node is 24.20.0; the Walrus docs ask for 24.22.1+. It ran fine, but upgrade before the final build.
+- Bundle research reviewed. Proposed route: agent pays our shop in USDC on Sui (MPP), and the shop buys the bundle from VTpass using a small naira balance Marshall funds. No Sui-accepting bundle seller was found.
+- Limits to design around: Tatum free plan is listed as 100K lifetime credits at 3 requests/sec; the managed relayer sees plaintext and has unpublished usage limits; bundles only for Marshall's own line until reselling rules are clear.
