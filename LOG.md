@@ -22,3 +22,6 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Our target: Wed 4 Nov.
 - Node is 24.20.0; the Walrus docs ask for 24.22.1+. It ran fine, but upgrade before the final build.
 - Bundle research reviewed. Proposed route: agent pays our shop in USDC on Sui (MPP), and the shop buys the bundle from VTpass using a small naira balance Marshall funds. No Sui-accepting bundle seller was found.
 - Limits to design around: Tatum free plan is listed as 100K lifetime credits at 3 requests/sec; the managed relayer sees plaintext and has unpublished usage limits; bundles only for Marshall's own line until reselling rules are clear.
+- Agent built: learning logic, Tatum pay detection, Walrus memories, savings transfers, 402 bundle shop, Telegram bot, "what it learned" page. 29 tests pass.
+- Real testnet run passed twice: USDC saved and paid to the shop, memories stored on Walrus Mainnet, knowledge rebuilt after deleting the local cache. VTpass was faked in this run.
+- Bugs the real run found: a first memory write can return 404 (now retried), and network blips while building a transaction (build now retried; sending is never retried).

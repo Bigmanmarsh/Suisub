@@ -8,3 +8,4 @@ dist/
 .next/
 *.log
 server.out
+data/

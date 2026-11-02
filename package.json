@@ -1,0 +1,20 @@
+{
+  "name": "total-recall-agent",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@mysten-incubation/memwal": "^0.1.12",
+    "@mysten/sui": "^2.38.0",
+    "@suimpp/mpp": "^0.9.0",
+    "dotenv": "^18.0.9",
+    "grammy": "^1.46.0",
+    "mppx": "^0.4.12"
+  }
+}
