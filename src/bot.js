@@ -46,6 +46,9 @@ export function createBot({ token, owner, getAgent, botInfo }) {
     await ctx.answerCallbackQuery();
     await getAgent().press(ctx.callbackQuery.data);
   });
-  bot.catch((error) => console.error('Telegram error:', error.message));
+  bot.catch(async (error) => {
+    console.error('Telegram error:', error.message);
+    await error.ctx.reply(`Sorry, that didn't work: ${error.error?.message ?? 'unknown error'}`).catch(() => {});
+  });
   return bot;
 }
