@@ -220,3 +220,11 @@ test('page shows the lessons and escapes anything typed by a user', () => {
   assert.match(html, /1 of 2 memories/);
   assert.match(html, /blobs\/abc/);
 });
+
+test('public page hides bill details but keeps the lessons', () => {
+  const records = [{ event: { type: 'bill_added', name: 'Rent', amount: 50, day: 1, at: '2026-11-01T10:00:00.000Z' }, blobId: 'abc' }];
+  assert.match(renderPage(records), /Rent/);
+  const html = renderPage(records, { isPublic: true });
+  assert.doesNotMatch(html, /Rent/);
+  assert.match(html, /added a monthly bill/);
+});

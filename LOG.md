@@ -33,3 +33,4 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Our target: Wed 4 Nov.
 - Real pay test: a separate testnet wallet paid the agent 1 USDC, and Tatum saw it.
 - Wrote README, LICENSE, blog draft and submission answers.
 - Marshall used the live bot: real pay alerts, three approvals, autopilot granted, a simulated purchase and "ran out early". The agent's behaviour changed as designed.
+- Aiming for 1st: added Mainnet settings, a small Mainnet agent wallet, hosting settings and a public page that hides bill details.

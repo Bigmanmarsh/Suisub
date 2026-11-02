@@ -20,7 +20,10 @@ function behaviour(state) {
   ].filter(Boolean);
 }
 
-export function renderPage(records) {
+// A public page hides what could identify the owner's life, like bill names and amounts.
+const lesson = (event, isPublic) => (isPublic && event.type === 'bill_added' ? 'User added a monthly bill.' : describeEvent(event));
+
+export function renderPage(records, { isPublic = false } = {}) {
   const ordered = [...records].sort((a, b) => a.event.at.localeCompare(b.event.at));
   const running = emptyState();
   const rows = ordered.map(({ event, blobId }) => {
@@ -29,7 +32,7 @@ export function renderPage(records) {
       ? `<a href="https://aggregator.walrus-mainnet.walrus.space/v1/blobs/${encodeURIComponent(blobId)}">Stored on Walrus</a>`
       : '<span class="wait">Saving…</span>';
     return `<li><time>${escapeHtml(new Date(event.at).toUTCString())}</time>
-      <p>${escapeHtml(describeEvent(event))}</p>
+      <p>${escapeHtml(lesson(event, isPublic))}</p>
       <p class="now">Now: ${escapeHtml(behaviour(running)[0])}</p>${proof}</li>`;
   }).join('');
   const now = behaviour(running).map((line) => `<li>${escapeHtml(line)}</li>`).join('');
@@ -51,11 +54,11 @@ ol p{margin:4px 0}time{color:var(--dim);font-size:13px}.now{color:var(--dim);fon
 </main></body></html>`;
 }
 
-export function startPage({ memory, port }) {
+export function startPage({ memory, port, host = '127.0.0.1', isPublic = false }) {
   const server = createServer((req, res) => {
     res.setHeader('content-type', 'text/html; charset=utf-8');
-    res.end(renderPage(memory.records()));
+    res.end(renderPage(memory.records(), { isPublic }));
   });
-  server.listen(port, '127.0.0.1');
+  server.listen(port, host);
   return server;
 }

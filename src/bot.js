@@ -3,8 +3,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { Bot, InlineKeyboard } from 'grammy';
 
-export function ownerStore(file) {
-  let chatId = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).chatId : null;
+// A fixed owner from settings survives a redeploy, when the local file is wiped.
+export function ownerStore(file, fixedChatId = null) {
+  let chatId = fixedChatId ?? (existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).chatId : null);
   return {
     get: () => chatId,
     claim(id) {

@@ -14,6 +14,7 @@ function required(name) {
 export function loadConfig() {
   const network = required('NETWORK');
   if (!USDC[network]) throw new Error('NETWORK must be testnet or mainnet');
+  const mainnet = network === 'mainnet';
   return {
     network,
     usdcType: USDC[network],
@@ -24,9 +25,9 @@ export function loadConfig() {
     memwalAccountId: required('MEMWAL_ACCOUNT_ID'),
     memwalNamespace: process.env.MEMWAL_NAMESPACE?.trim() || 'money-agent',
     telegramToken: required('TELEGRAM_BOT_TOKEN'),
-    agentKey: required('AGENT_KEY'),
-    shopAddress: required('SHOP_ADDRESS'),
-    savingsAddress: required('SAVINGS_ADDRESS'),
+    agentKey: required(mainnet ? 'MAINNET_AGENT_KEY' : 'AGENT_KEY'),
+    shopAddress: required(mainnet ? 'MAINNET_SHOP_ADDRESS' : 'SHOP_ADDRESS'),
+    savingsAddress: required(mainnet ? 'MAINNET_SAVINGS_ADDRESS' : 'SAVINGS_ADDRESS'),
     paymentSecret: required('PAYMENT_SECRET_KEY'),
     rateMarginPercent: Number(process.env.RATE_MARGIN_PERCENT ?? 1),
     ownerPhone: required('OWNER_PHONE'),
@@ -38,7 +39,10 @@ export function loadConfig() {
       secretKey: process.env.VTPASS_SECRET_KEY?.trim() ?? '',
     },
     shopPort: Number(process.env.SHOP_PORT ?? 4020),
-    pagePort: Number(process.env.PAGE_PORT ?? 4030),
+    pagePort: Number(process.env.PORT ?? process.env.PAGE_PORT ?? 4030),
+    pageHost: process.env.PAGE_HOST?.trim() || '127.0.0.1',
+    pagePublic: process.env.PAGE_PUBLIC === 'true',
+    ownerChatId: process.env.OWNER_CHAT_ID ? Number(process.env.OWNER_CHAT_ID) : null,
     pollSeconds: Number(process.env.POLL_SECONDS ?? 30),
     dataDir: process.env.DATA_DIR?.trim() || 'data',
   };

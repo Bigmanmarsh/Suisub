@@ -31,7 +31,7 @@ const realVtpass = createVtpass(config.vtpass);
 const vtpass = config.simulateDelivery ? simulatedDelivery(realVtpass) : realVtpass;
 const wallet = createWallet(config);
 const rates = createRates({ marginPercent: config.rateMarginPercent });
-const owner = ownerStore(`${config.dataDir}/owner.json`);
+const owner = ownerStore(`${config.dataDir}/owner.json`, config.ownerChatId);
 
 const bot = createBot({ token: config.telegramToken, owner, getAgent: () => agent });
 const agent = createAgent({
@@ -49,7 +49,7 @@ const agent = createAgent({
 });
 
 startShop({ config, vtpass, rates });
-startPage({ memory, port: config.pagePort });
+startPage({ memory, port: config.pagePort, host: config.pageHost, isPublic: config.pagePublic });
 
 await agent.skipOldPayments().catch((error) => console.error('Tatum:', error.message));
 const safely = (job, label) => job().catch((error) => console.error(`${label}:`, error.message));
