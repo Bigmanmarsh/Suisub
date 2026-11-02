@@ -28,7 +28,7 @@ export function loadConfig() {
     shopAddress: required('SHOP_ADDRESS'),
     savingsAddress: required('SAVINGS_ADDRESS'),
     paymentSecret: required('PAYMENT_SECRET_KEY'),
-    ngnPerUsdc: Number(required('NGN_PER_USDC')),
+    rateMarginPercent: Number(process.env.RATE_MARGIN_PERCENT ?? 1),
     ownerPhone: required('OWNER_PHONE'),
     vtpass: {
       baseUrl: process.env.VTPASS_MODE === 'live' ? 'https://vtpass.com/api' : 'https://sandbox.vtpass.com/api',

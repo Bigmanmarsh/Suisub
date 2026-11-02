@@ -8,6 +8,7 @@ import { createAgent } from '../src/agent.js';
 import { rebuildState } from '../src/brain.js';
 import { loadConfig } from '../src/config.js';
 import { createMemory } from '../src/memory.js';
+import { createRates } from '../src/rate.js';
 import { startShop } from '../src/shop.js';
 import { createTatum } from '../src/tatum.js';
 import { createWallet } from '../src/wallet.js';
@@ -31,7 +32,8 @@ const fakeVtpass = {
   plans: async () => [{ variation_code: 'mtn-10mb-100', name: 'N100 100MB - 24 hrs', variation_amount: '100.00' }],
   buy: async () => ({ status: 'delivered', requestId: 'fake-vtpass' }),
 };
-const shop = startShop({ config, vtpass: fakeVtpass });
+const rates = createRates({ marginPercent: config.rateMarginPercent });
+const shop = startShop({ config, vtpass: fakeVtpass, rates });
 
 let lastButtons = [];
 const agent = createAgent({
@@ -39,6 +41,7 @@ const agent = createAgent({
   wallet,
   tatum,
   vtpassPlans: fakeVtpass.plans,
+  rates,
   shopUrl: `http://localhost:${config.shopPort}`,
   config,
   async notify(text, buttons) {

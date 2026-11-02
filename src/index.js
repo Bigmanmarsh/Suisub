@@ -5,6 +5,7 @@ import { createBot, ownerStore, toKeyboard } from './bot.js';
 import { loadConfig } from './config.js';
 import { createMemory } from './memory.js';
 import { startPage } from './page.js';
+import { createRates } from './rate.js';
 import { startShop } from './shop.js';
 import { createTatum } from './tatum.js';
 import { createVtpass } from './vtpass.js';
@@ -28,6 +29,7 @@ memory.sync();
 const tatum = createTatum({ url: config.tatumUrl, apiKey: config.tatumKey, usdcType: config.usdcType });
 const vtpass = createVtpass(config.vtpass);
 const wallet = createWallet(config);
+const rates = createRates({ marginPercent: config.rateMarginPercent });
 const owner = ownerStore(`${config.dataDir}/owner.json`);
 
 const bot = createBot({ token: config.telegramToken, owner, getAgent: () => agent });
@@ -36,6 +38,7 @@ const agent = createAgent({
   wallet,
   tatum,
   vtpassPlans: (service) => vtpass.plans(service),
+  rates,
   shopUrl: `http://localhost:${config.shopPort}`,
   config,
   async notify(text, buttons) {
@@ -44,7 +47,7 @@ const agent = createAgent({
   },
 });
 
-startShop({ config, vtpass });
+startShop({ config, vtpass, rates });
 startPage({ memory, port: config.pagePort });
 
 await agent.skipOldPayments().catch((error) => console.error('Tatum:', error.message));

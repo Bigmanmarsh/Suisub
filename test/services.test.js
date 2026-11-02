@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { createMemory, decodeMemory, encodeMemory } from '../src/memory.js';
 import { renderPage } from '../src/page.js';
+import { createRates } from '../src/rate.js';
 import { createShopHandler, nairaToUsdc } from '../src/shop.js';
 import { createTatum } from '../src/tatum.js';
 import { createVtpass, requestId } from '../src/vtpass.js';
@@ -123,13 +124,14 @@ test('VTpass: only "delivered" counts as delivered', async () => {
   assert.equal((await buyWith({})).status, 'failed');
 });
 
-test('shop: charges the real plan price and delivers only to the owner line', async () => {
+function shopFixture() {
   const bought = [];
   const charges = [];
-  let paid = false;
-  const handle = createShopHandler({
+  const context = { bought, charges, paid: false, rate: 1500, time: 0 };
+  context.handle = createShopHandler({
     ownerPhone: '08011111111',
-    ngnPerUsdc: 1500,
+    now: () => context.time,
+    rates: { current: async () => ({ rate: context.rate, source: 'test' }) },
     vtpass: {
       plans: async () => [{ variation_code: 'p', name: 'N150 plan', variation_amount: '150.00' }],
       buy: async (order) => { bought.push(order); return { status: 'delivered' }; },
@@ -137,22 +139,71 @@ test('shop: charges the real plan price and delivers only to the owner line', as
     mppx: {
       charge: ({ amount }) => async () => {
         charges.push(amount);
-        return paid
+        return context.paid
           ? { status: 200, withReceipt: (response) => response }
           : { status: 402, challenge: new Response(null, { status: 402 }) };
       },
     },
   });
-  const url = 'http://shop/buy?service=mtn-data&plan=p&phone=09099999999&amount=0';
-  assert.equal((await handle(new Request(url))).status, 402);
-  assert.equal(bought.length, 0);
-  paid = true;
-  const body = await (await handle(new Request(url))).json();
+  context.quote = async () => (await context.handle(new Request('http://shop/quote?service=mtn-data&plan=p'))).json();
+  context.buy = (id) => context.handle(new Request(`http://shop/buy?quote=${id}&phone=09099999999&amount=0`));
+  return context;
+}
+
+test('shop: charges the real plan price and delivers only to the owner line', async () => {
+  const shop = shopFixture();
+  const { quote } = await shop.quote();
+  assert.equal((await shop.buy(quote)).status, 402);
+  assert.equal(shop.bought.length, 0);
+  shop.paid = true;
+  const body = await (await shop.buy(quote)).json();
   assert.equal(body.delivery.status, 'delivered');
-  assert.deepEqual(charges, ['0.100000', '0.100000']);
-  assert.equal(bought[0].phone, '08011111111');
-  assert.equal((await handle(new Request('http://shop/buy?service=glo&plan=p'))).status, 404);
-  assert.equal((await handle(new Request('http://shop/buy?service=mtn-data&plan=zzz'))).status, 404);
+  assert.deepEqual(shop.charges, ['0.100000', '0.100000']);
+  assert.equal(shop.bought[0].phone, '08011111111');
+  assert.equal((await shop.handle(new Request('http://shop/quote?service=glo&plan=p'))).status, 404);
+  assert.equal((await shop.handle(new Request('http://shop/quote?service=mtn-data&plan=zzz'))).status, 404);
+});
+
+test('shop: a rate change cannot change a quoted price', async () => {
+  const shop = shopFixture();
+  const { quote } = await shop.quote();
+  await shop.buy(quote);
+  shop.rate = 1000;
+  shop.paid = true;
+  await shop.buy(quote);
+  assert.deepEqual(shop.charges, ['0.100000', '0.100000']);
+});
+
+test('shop: a quote buys once and then expires', async () => {
+  const shop = shopFixture();
+  shop.paid = true;
+  const first = await shop.quote();
+  await shop.buy(first.quote);
+  assert.equal((await shop.buy(first.quote)).status, 410);
+  assert.equal(shop.bought.length, 1);
+  const second = await shop.quote();
+  shop.time = 11 * 60 * 1000;
+  assert.equal((await shop.buy(second.quote)).status, 410);
+});
+
+test('rate: uses the live source and applies the margin', async () => {
+  const fetchFn = async () => json({ 'usd-coin': { ngn: 1000, last_updated_at: 1000 } });
+  const rates = createRates({ marginPercent: 1, fetchFn, now: () => 1000 * 1000 + 60000 });
+  const current = await rates.current();
+  assert.equal(current.rate, 990);
+  assert.equal(current.source, 'CoinGecko');
+});
+
+test('rate: falls back, and refuses when nothing is fresh', async () => {
+  const time = 100000 * 1000;
+  const fallback = async (url) => (url.includes('coingecko')
+    ? json({}, 429)
+    : json({ rates: { NGN: 1300 }, time_last_update_unix: 100000 }));
+  assert.equal((await createRates({ fetchFn: fallback, now: () => time }).current()).rate, 1300);
+  const stale = async (url) => (url.includes('coingecko')
+    ? json({ 'usd-coin': { ngn: 1000, last_updated_at: 1 } })
+    : json({ rates: { NGN: 1300 }, time_last_update_unix: 1 }));
+  await assert.rejects(createRates({ fetchFn: stale, now: () => time }).current(), /No fresh/);
 });
 
 test('naira to USDC rounds up so the shop is never short', () => {

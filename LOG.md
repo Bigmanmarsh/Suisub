@@ -27,3 +27,4 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Our target: Wed 4 Nov.
 - Bugs the real run found: a first memory write can return 404 (now retried), and network blips while building a transaction (build now retried; sending is never retried).
 - VTpass plan lists work for all four networks, but the keys are refused (401) on sandbox order and balance calls. Plan lists don't appear to need valid keys.
 - Real plan lists exposed a bad default: "best value" chose a N50,000 plan. The agent now asks for a budget first and skips app-only or night-only plans.
+- Replaced the placeholder rate (1500) with a live USDC to naira rate: CoinGecko first, ExchangeRate-API as a backup, no purchase if neither is fresh. Shop quotes lock the price, and each quote buys once.

@@ -8,6 +8,7 @@ import { nairaToUsdc } from './shop.js';
 const button = (text, data) => ({ text, data });
 const SAVE_CHOICES = [10, 20, 30, 50];
 const BUDGET_CHOICES = [500, 1000, 2000, 5000];
+const PRICE_TOLERANCE = 0.02; // how far a shop quote may move above the price just shown
 const percentRow = (prefix) => SAVE_CHOICES.map((percent) => button(`${percent}%`, `${prefix}:${percent}`));
 const NETWORK_NAMES = { 'mtn-data': 'MTN', 'airtel-data': 'Airtel', 'glo-data': 'Glo', 'etisalat-data': '9mobile' };
 const NETWORK_BUTTONS = [
@@ -15,7 +16,7 @@ const NETWORK_BUTTONS = [
   [button('Glo', 'network:glo-data'), button('9mobile', 'network:etisalat-data')],
 ];
 
-export function createAgent({ memory, wallet, tatum, vtpassPlans, shopUrl, config, notify, now = () => new Date() }) {
+export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl, config, notify, now = () => new Date(), fetchFn = fetch }) {
   const pendingPays = new Map();
   const pendingPlans = new Map();
   const seenPayments = new Set();
@@ -48,8 +49,12 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, shopUrl, confi
 
   async function buyPlan(plan) {
     const { service } = state().data;
-    const url = `${shopUrl}/buy?service=${service}&plan=${encodeURIComponent(plan.code)}`;
-    const result = await wallet.buyBundle(url, Number(nairaToUsdc(plan.naira, config.ngnPerUsdc)));
+    const { rate } = await rates.current();
+    const limit = Number(nairaToUsdc(plan.naira, rate)) * (1 + PRICE_TOLERANCE);
+    const quoteResponse = await fetchFn(`${shopUrl}/quote?service=${service}&plan=${encodeURIComponent(plan.code)}`);
+    if (!quoteResponse.ok) throw new Error(`Shop could not price this plan (HTTP ${quoteResponse.status})`);
+    const quote = await quoteResponse.json();
+    const result = await wallet.buyBundle(`${shopUrl}/buy?quote=${quote.quote}`, limit);
     const delivery = result.body.delivery ?? { status: 'failed', reason: `Shop returned ${result.status}` };
     if (delivery.status === 'delivered') {
       learn('data_bought', { naira: plan.naira, days: plan.days });
@@ -176,9 +181,10 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, shopUrl, confi
 
     async offerPlan(plan, intro) {
       pendingPlans.set(plan.code, plan);
-      const usdc = nairaToUsdc(plan.naira, config.ngnPerUsdc);
+      const { rate, source } = await rates.current();
+      const usdc = nairaToUsdc(plan.naira, rate);
       await notify(
-        `${intro} Best deal I found on VTpass for you: ${plan.name} (about ${usdc} USDC). Buy it?`,
+        `${intro} Best deal I found on VTpass for you: ${plan.name}.\nAbout ${usdc} USDC at N${rate.toFixed(2)} per USDC (${source}, includes a small margin). Buy it?`,
         [[button('Buy', `data:buy:${plan.code}`), button('Too expensive', `data:expensive:${plan.code}`)]],
       );
     },
