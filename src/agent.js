@@ -1,13 +1,19 @@
 // The agent: decides what to say and do, using what it has learned.
 import {
-  billsDueSoon, nextDataDue, parsePlan, pickPlan, planForPay, rebuildState,
-  shouldOfferDataAuto, shouldOfferSaveAuto,
+  billsDueSoon, estimateMonthlyMb, nextDataDue, planForPay, rebuildState,
+  shouldOfferDataAuto, shouldOfferSaveAuto, suggestPlans,
 } from './brain.js';
 import { nairaToUsdc } from './shop.js';
 
 const button = (text, data) => ({ text, data });
 const SAVE_CHOICES = [10, 20, 30, 50];
 const BUDGET_CHOICES = [500, 1000, 2000, 5000];
+const USAGE_CHOICES = [5, 10, 20, 50];
+const usageRows = () => [
+  USAGE_CHOICES.map((gb) => button(`${gb}GB`, `usage:${gb}`)),
+  [button('Not sure', 'usage:unsure')],
+];
+const formatGb = (mb) => `${Math.round((mb / 1024) * 10) / 10}GB`;
 const PRICE_TOLERANCE = 0.02; // how far a shop quote may move above the price just shown
 const percentRow = (prefix) => SAVE_CHOICES.map((percent) => button(`${percent}%`, `${prefix}:${percent}`));
 const NETWORK_NAMES = { 'mtn-data': 'MTN', 'airtel-data': 'Airtel', 'glo-data': 'Glo', 'etisalat-data': '9mobile' };
@@ -57,7 +63,7 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
     const result = await wallet.buyBundle(`${shopUrl}/buy?quote=${quote.quote}`, limit);
     const delivery = result.body.delivery ?? { status: 'failed', reason: `Shop returned ${result.status}` };
     if (delivery.status === 'delivered') {
-      learn('data_bought', { naira: plan.naira, days: plan.days });
+      learn('data_bought', { naira: plan.naira, days: plan.days, mb: plan.mb });
       return { ...delivery, digest: result.digest };
     }
     return { ...delivery, digest: result.digest };
@@ -69,10 +75,10 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
     return `Your payment went through, but the bundle was NOT delivered (${delivery.reason}). Payment: ${delivery.digest ?? 'not sent'}`;
   }
 
-  async function bestPlan() {
+  async function planOptions() {
     const current = state();
-    if (!current.data.service) return null;
-    return pickPlan(current, await vtpassPlans(current.data.service));
+    if (!current.data.service) return { recommended: null, cheaper: null, bigger: null };
+    return suggestPlans(current, await vtpassPlans(current.data.service));
   }
 
   return {
@@ -97,6 +103,8 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
         `Data: ${NETWORK_NAMES[current.data.service] ?? 'not set'} (${current.data.auto ? `by myself, up to N${current.data.autoLimitNaira}` : 'I ask first'})`,
       ];
       if (current.data.maxNaira !== null) lines.push(`Price limit you taught me: N${current.data.maxNaira}`);
+      const monthly = estimateMonthlyMb(current);
+      if (monthly !== null) lines.push(`Your data use: about ${formatGb(monthly)} a month (my estimate)`);
       const due = nextDataDue(current);
       if (due) lines.push(`Data probably runs out: ${due.toDateString()}`);
       for (const bill of current.bills) lines.push(`Bill: ${bill.name}, ${bill.amount}, day ${bill.day}`);
@@ -169,23 +177,52 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
       const due = nextDataDue(current);
       if (!due || due.getTime() - today.getTime() > 86400000 || reminded.has(`data-${dayKey}`)) return;
       reminded.add(`data-${dayKey}`);
-      const plan = await bestPlan();
+      const options = await planOptions();
+      const plan = options.recommended;
       if (!plan) return;
       if (current.data.auto && plan.naira <= current.data.autoLimitNaira) {
         const delivery = await buyPlan(plan);
         await notify(`Your data was about to run out, so I renewed it by myself.\n${deliveryMessage(plan, delivery)}`);
         return;
       }
-      await this.offerPlan(plan, 'Your data is about to run out.');
+      await this.offerPlans(options, 'Your data is about to run out.');
     },
 
-    async offerPlan(plan, intro) {
-      pendingPlans.set(plan.code, plan);
+    // Offers the suggested plan, with a cheaper and a bigger choice when they exist.
+    async offerPlans({ recommended, cheaper, bigger }, intro) {
       const { rate, source } = await rates.current();
-      const usdc = nairaToUsdc(plan.naira, rate);
+      const usdc = (plan) => nairaToUsdc(plan.naira, rate);
+      const monthly = estimateMonthlyMb(state());
+      const reason = monthly === null
+        ? 'Best value I found on VTpass'
+        : `You use about ${formatGb(monthly)} a month, so I suggest`;
+      const lines = [`${intro} ${reason}: ${recommended.name} (about ${usdc(recommended)} USDC).`];
+      const buttons = [[button(`Buy suggested: N${recommended.naira}`, `data:buy:${recommended.code}`)]];
+      pendingPlans.clear();
+      pendingPlans.set(recommended.code, recommended);
+      for (const [label, plan] of [['Cheaper', cheaper], ['Bigger', bigger]]) {
+        if (!plan) continue;
+        pendingPlans.set(plan.code, plan);
+        lines.push(`${label}: ${plan.name} (about ${usdc(plan)} USDC).`);
+        buttons.push([button(`${label}: N${plan.naira}`, `data:buy:${plan.code}`)]);
+      }
+      lines.push(`Rate: N${rate.toFixed(2)} per USDC (${source}, includes a small margin).`);
+      buttons.push([button('Too expensive', `data:expensive:${recommended.code}`)]);
+      await notify(lines.join('\n'), buttons);
+    },
+
+    async askUsage() {
+      const monthly = estimateMonthlyMb(state());
+      if (monthly === null) {
+        await notify('About how much data do you use in a month?', usageRows());
+        return;
+      }
       await notify(
-        `${intro} Best deal I found on VTpass for you: ${plan.name}.\nAbout ${usdc} USDC at N${rate.toFixed(2)} per USDC (${source}, includes a small margin). Buy it?`,
-        [[button('Buy', `data:buy:${plan.code}`), button('Too expensive', `data:expensive:${plan.code}`)]],
+        `I estimate you use about ${formatGb(monthly)} a month. Your phone's settings show the real number. Did your last plan fit, or do you want to set it yourself?`,
+        [
+          [button('I ran out early', 'usage:ranout'), button('I had data left', 'usage:left')],
+          ...usageRows().slice(0, 1),
+        ],
       );
     },
 
@@ -198,14 +235,35 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
         await notify('Which network is your line on?', NETWORK_BUTTONS);
         return;
       }
-      const { maxNaira } = state().data;
-      const plan = maxNaira === null ? null : await bestPlan();
-      if (!plan) {
-        const intro = maxNaira === null ? 'What is the most you want to spend on a data plan?' : `No plan fits N${maxNaira}. What should your new budget be?`;
-        await notify(intro, [BUDGET_CHOICES.map((naira) => button(`N${naira}`, `budget:${naira}`))]);
+      const { maxNaira, usageMb } = state().data;
+      if (usageMb === null && maxNaira === null) {
+        await this.askUsage();
         return;
       }
-      await this.offerPlan(plan, 'Here you go.');
+      const options = await planOptions();
+      if (!options.recommended) {
+        await this.askBudget(`No plan fits N${maxNaira}. What should your new budget be?`);
+        return;
+      }
+      await this.offerPlans(options, 'Here you go.');
+    },
+
+    async askBudget(intro) {
+      await notify(intro, [BUDGET_CHOICES.map((naira) => button(`N${naira}`, `budget:${naira}`))]);
+    },
+
+    async pressUsage(value) {
+      if (value === 'unsure') {
+        await this.askBudget('No problem. What is the most you want to spend on a data plan?');
+        return;
+      }
+      if (value === 'ranout' || value === 'left') {
+        learn(value === 'ranout' ? 'data_ran_out' : 'data_left_over');
+        await notify(`Noted. I now estimate about ${formatGb(estimateMonthlyMb(state()))} a month, and my next suggestion will reflect that.`);
+        return;
+      }
+      learn('data_usage_set', { gb: Number(value) });
+      await this.askForData();
     },
 
     // Handles a button press. Returns nothing; replies go through notify.
@@ -223,6 +281,8 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
         case 'budget':
           learn('data_budget_set', { naira: Number(value) });
           return this.askForData();
+        case 'usage':
+          return this.pressUsage(value);
         case 'save':
           return this.pressSave(value, extra);
         case 'savepercent': {
@@ -303,7 +363,7 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
         await notify('That offer has expired. Use /data for a fresh one.');
         return;
       }
-      pendingPlans.delete(code);
+      pendingPlans.clear();
       if (choice === 'expensive') {
         learn('data_too_expensive', { naira: plan.naira });
         await notify(`Noted. I won't suggest N${plan.naira} or more again.`);
@@ -325,7 +385,5 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
       if (current.data.auto) learn('data_auto_off');
       await notify("Autopilot is off. I'll ask before doing anything.");
     },
-
-    planFromRaw: parsePlan,
   };
 }

@@ -1,6 +1,6 @@
-// Checks the VTpass connection: plan lists for each network and how well we can read them.
+// Checks the VTpass connection: plan lists for each network and what the agent would offer.
 // In sandbox mode only, also places one test order on VTpass's test number.
-import { parsePlan, pickPlan, emptyState } from '../src/brain.js';
+import { parsePlan, rebuildState, suggestPlans } from '../src/brain.js';
 import { loadConfig } from '../src/config.js';
 import { createVtpass } from '../src/vtpass.js';
 
@@ -12,12 +12,14 @@ console.log(`Mode: ${sandbox ? 'sandbox' : 'live'}`);
 for (const service of ['mtn-data', 'airtel-data', 'glo-data', 'etisalat-data']) {
   try {
     const plans = await vtpass.plans(service);
-    const unread = plans.filter((plan) => !parsePlan(plan));
-    const state = emptyState();
-    state.data.maxNaira = 1000;
-    const best = pickPlan(state, plans);
-    console.log(`${service}: ${plans.length} plans, ${unread.length} unreadable. Best value up to N1000: ${best?.name} (N${best?.naira})`);
-    unread.slice(0, 4).forEach((plan) => console.log(`  cannot read: ${plan.name}`));
+    const unread = plans.filter((plan) => !parsePlan(plan)).length;
+    const longest = Math.max(...plans.map((plan) => `data:expensive:${plan.variation_code}`.length));
+    console.log(`${service}: ${plans.length} plans, ${unread} unreadable, longest button ${longest}/64`);
+    for (const gb of [2, 10, 50]) {
+      const state = rebuildState([{ type: 'data_usage_set', gb, at: '2026-11-01T00:00:00.000Z' }]);
+      const { recommended, cheaper, bigger } = suggestPlans(state, plans);
+      console.log(`  ${gb}GB: ${recommended?.name} | cheaper: ${cheaper?.name} | bigger: ${bigger?.name}`);
+    }
   } catch (error) {
     console.log(`${service}: ${error.message}`);
   }

@@ -2,6 +2,11 @@
 // Every lesson is a plain event, so the state can be rebuilt from Walrus at any time.
 
 export const TRUST_AFTER = 3; // approvals in a row before the agent asks for autopilot
+const RAN_OUT_FACTOR = 1.25; // "I ran out early" raises the usage estimate
+const LEFT_OVER_FACTOR = 0.8; // "I had data left" lowers it
+const MIN_HISTORY_DAYS = 7; // purchases must span this long before they replace what the user said
+const MAX_SUGGESTED_DAYS = 31; // a year-long plan is never the everyday suggestion
+const FULL_MONTH_DAYS = 28; // plans this long are treated as lasting the month
 
 export function emptyState() {
   return {
@@ -13,6 +18,8 @@ export function emptyState() {
       service: null,
       maxNaira: null,
       preferredDays: null,
+      usageMb: null,
+      usageAdjust: 1,
       purchases: [],
       streak: 0,
       auto: false,
@@ -52,12 +59,22 @@ export function applyEvent(state, event) {
       data.service = event.service;
       break;
     case 'data_bought':
-      data.purchases.push({ at: event.at, naira: event.naira, days: event.days });
+      data.purchases.push({ at: event.at, naira: event.naira, days: event.days, mb: event.mb ?? 0 });
       data.preferredDays = event.days;
       data.streak += 1;
       break;
     case 'data_budget_set':
       data.maxNaira = event.naira;
+      break;
+    case 'data_usage_set':
+      data.usageMb = event.gb * 1024;
+      data.usageAdjust = 1;
+      break;
+    case 'data_ran_out':
+      data.usageAdjust *= RAN_OUT_FACTOR;
+      break;
+    case 'data_left_over':
+      data.usageAdjust *= LEFT_OVER_FACTOR;
       break;
     case 'data_too_expensive':
       data.maxNaira = event.naira - 1;
@@ -135,6 +152,67 @@ export function pickPlan(state, rawPlans) {
   return pool.sort((a, b) => b.mb / b.naira - a.mb / a.naira)[0] ?? null;
 }
 
+// Estimated monthly use. The app can't see the phone's usage, so this comes from what the
+// user said, what they actually bought, and whether they ran out or had data left.
+export function estimateMonthlyMb(state) {
+  const { purchases, usageMb, usageAdjust } = state.data;
+  const dayMs = 86400000;
+  let base = usageMb;
+  if (purchases.length >= 2 && purchases.every((purchase) => purchase.mb > 0)) {
+    const first = Date.parse(purchases[0].at);
+    const last = Date.parse(purchases[purchases.length - 1].at);
+    const days = (last - first) / dayMs;
+    if (days >= MIN_HISTORY_DAYS) {
+      const used = purchases.slice(0, -1).reduce((sum, purchase) => sum + purchase.mb, 0);
+      base = (used / days) * 30;
+    }
+  }
+  return base === null ? null : base * usageAdjust;
+}
+
+// A suggested plan, plus a cheaper and a bigger choice. Without a usage estimate it falls
+// back to the best value. Any choice may be missing if no plan fits.
+export function suggestPlans(state, rawPlans) {
+  const { maxNaira, preferredDays } = state.data;
+  const plans = rawPlans
+    .map(parsePlan)
+    .filter(Boolean)
+    .filter((plan) => plan.days <= MAX_SUGGESTED_DAYS)
+    .filter((plan) => maxNaira === null || plan.naira <= maxNaira);
+  const monthly = estimateMonthlyMb(state);
+  const fullMonth = plans.filter((plan) => plan.days >= FULL_MONTH_DAYS);
+  const cheapest = (list) => [...list].sort((a, b) => a.naira - b.naira)[0] ?? null;
+  let recommended = null;
+  if (monthly === null) {
+    const pool = preferredDays === null && fullMonth.length > 0 ? fullMonth : plans;
+    recommended = pickPlan(state, pool.map(toRawPlan));
+  } else {
+    const daily = monthly / 30;
+    const covers = (plan) => plan.mb >= daily * plan.days;
+    const sameLength = plans.filter((plan) => plan.days === preferredDays && covers(plan));
+    // Order of preference: the length they keep buying, a plan that lasts the month, the
+    // biggest month-long plan they can afford, then whatever short plan covers them.
+    recommended = cheapest(sameLength)
+      ?? cheapest(fullMonth.filter(covers))
+      ?? [...fullMonth].sort((a, b) => b.mb - a.mb)[0]
+      ?? [...plans].filter(covers).sort((a, b) => a.naira / a.days - b.naira / b.days)[0]
+      ?? [...plans].sort((a, b) => b.mb - a.mb)[0]
+      ?? null;
+  }
+  if (!recommended) return { recommended: null, cheaper: null, bigger: null };
+  // The next step down and up, keeping a similar length so the choices are comparable.
+  const similar = plans.filter((plan) => plan.days >= recommended.days);
+  const cheaper = [...similar]
+    .filter((plan) => plan.naira < recommended.naira)
+    .sort((a, b) => b.naira - a.naira)[0] ?? null;
+  const bigger = cheapest(similar.filter((plan) => plan.naira > recommended.naira && plan.mb > recommended.mb));
+  return { recommended, cheaper, bigger };
+}
+
+function toRawPlan(plan) {
+  return { variation_code: plan.code, name: plan.name, variation_amount: plan.naira };
+}
+
 // When data should run out next: the plan's length, or the learned gap between purchases.
 export function nextDataDue(state) {
   const { purchases } = state.data;
@@ -168,6 +246,9 @@ export function describeEvent(event) {
     case 'bill_added': return `User has a monthly bill: ${event.name}, ${event.amount}, due on day ${event.day}.`;
     case 'data_network_set': return `User's data network is ${event.service}.`;
     case 'data_bought': return `User bought a ${event.days}-day data plan for N${event.naira}.`;
+    case 'data_usage_set': return `User says they use about ${event.gb}GB of data a month.`;
+    case 'data_ran_out': return 'User ran out of data early, so they need more than estimated.';
+    case 'data_left_over': return 'User had data left over, so they need less than estimated.';
     case 'data_budget_set': return `User's budget for a data plan is N${event.naira}.`;
     case 'data_too_expensive': return `User said N${event.naira} is too expensive for data.`;
     case 'data_auto_on': return `User allowed automatic data purchases up to N${event.limitNaira}.`;

@@ -28,3 +28,4 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Our target: Wed 4 Nov.
 - VTpass plan lists work for all four networks, but the keys are refused (401) on sandbox order and balance calls. Plan lists don't appear to need valid keys.
 - Real plan lists exposed a bad default: "best value" chose a N50,000 plan. The agent now asks for a budget first and skips app-only or night-only plans.
 - Replaced the placeholder rate (1500) with a live USDC to naira rate: CoinGecko first, ExchangeRate-API as a backup, no purchase if neither is fresh. Shop quotes lock the price, and each quote buys once.
+- Plan offers now come from monthly usage: a suggested plan plus a cheaper and a bigger choice. Usage comes from what the user says, their purchases, and "ran out early" or "had data left". The app cannot see the phone's real usage.

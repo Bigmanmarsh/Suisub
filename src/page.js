@@ -1,6 +1,6 @@
 // The "what it learned" page: every memory, and how it changed the agent's behaviour.
 import { createServer } from 'node:http';
-import { applyEvent, describeEvent, emptyState } from './brain.js';
+import { applyEvent, describeEvent, emptyState, estimateMonthlyMb } from './brain.js';
 
 const escapeHtml = (text) => String(text).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
@@ -11,8 +11,13 @@ function behaviour(state) {
   const data = state.data.auto
     ? `Renews data by itself, up to N${state.data.autoLimitNaira}`
     : state.data.service ? 'Asks before buying data' : 'Doesn\'t know your network yet';
-  return [save, data, state.data.maxNaira === null ? null : `Won't suggest data over N${state.data.maxNaira}`]
-    .filter(Boolean);
+  const monthly = estimateMonthlyMb(state);
+  return [
+    save,
+    data,
+    monthly === null ? null : `Suggests plans for about ${Math.round((monthly / 1024) * 10) / 10}GB of data a month`,
+    state.data.maxNaira === null ? null : `Won't suggest data over N${state.data.maxNaira}`,
+  ].filter(Boolean);
 }
 
 export function renderPage(records) {

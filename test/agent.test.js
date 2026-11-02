@@ -7,7 +7,7 @@ const PLANS = [
   { variation_code: 'best', name: 'N1500 6GB - 7 days', variation_amount: '1500.00' },
 ];
 
-function setup({ delivery = { status: 'delivered', requestId: 'r1' } } = {}) {
+function setup({ delivery = { status: 'delivered', requestId: 'r1' }, plans = PLANS } = {}) {
   const events = [];
   const messages = [];
   const sent = [];
@@ -22,7 +22,7 @@ function setup({ delivery = { status: 'delivered', requestId: 'r1' } } = {}) {
       async buyBundle(url, max) { bought.push({ url, max }); return { status: 200, body: { delivery }, digest: 'digest2' }; },
     },
     tatum: { usdcBalance: async () => 5, incomingPayments: async () => [] },
-    vtpassPlans: async () => PLANS,
+    vtpassPlans: async () => plans,
     rates: { current: async () => ({ rate: 1500, source: 'test' }) },
     fetchFn: async (url) => { quoteUrls.push(url); return Response.json({ quote: 'q1', amount: '1.000000' }); },
     shopUrl: 'http://shop',
@@ -85,6 +85,8 @@ test('too expensive is remembered and changes the next offer', async () => {
   const ctx = setup();
   await ctx.agent.press('network:mtn-data');
   await ctx.agent.askForData();
+  assert.match(ctx.messages.at(-1).text, /how much data do you use/);
+  await ctx.agent.press('usage:unsure');
   assert.match(ctx.messages.at(-1).text, /most you want to spend/);
   await ctx.agent.press('budget:2000');
   assert.match(ctx.messages.at(-1).text, /6GB/);
@@ -135,6 +137,33 @@ test('offers show the live rate and its source', async () => {
   await ctx.agent.press('network:mtn-data');
   await ctx.agent.press('budget:2000');
   assert.match(ctx.messages.at(-1).text, /N1500\.00 per USDC \(test/);
+});
+
+test('offers a suggested, a cheaper and a bigger plan from monthly usage', async () => {
+  const ctx = setup({
+    plans: [
+      { variation_code: 'small', name: 'N1000 1.5GB - 30 days', variation_amount: '1000' },
+      { variation_code: 'mid', name: 'N2500 6GB - 30 days', variation_amount: '2500' },
+      { variation_code: 'big', name: 'N3500 14GB - 30 days', variation_amount: '3500' },
+    ],
+  });
+  await ctx.agent.press('network:mtn-data');
+  await ctx.agent.press('usage:5');
+  const offer = ctx.messages.at(-1);
+  assert.match(offer.text, /You use about 5GB a month, so I suggest: N2500 6GB/);
+  assert.match(offer.text, /Cheaper: N1000/);
+  assert.match(offer.text, /Bigger: N3500/);
+  assert.deepEqual(ctx.lastButtons(), ['data:buy:mid', 'data:buy:small', 'data:buy:big', 'data:expensive:mid']);
+
+  await ctx.agent.press('data:buy:big');
+  assert.ok(ctx.events.some((event) => event.type === 'data_bought' && event.naira === 3500 && event.mb === 14336));
+});
+
+test('running out early changes the estimate it reports', async () => {
+  const ctx = setup();
+  await ctx.agent.press('usage:10');
+  await ctx.agent.press('usage:ranout');
+  assert.match(ctx.messages.at(-1).text, /about 12\.5GB a month/);
 });
 
 test('stop takes autopilot back', async () => {
