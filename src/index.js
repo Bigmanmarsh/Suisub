@@ -8,7 +8,7 @@ import { startPage } from './page.js';
 import { createRates } from './rate.js';
 import { startShop } from './shop.js';
 import { createTatum } from './tatum.js';
-import { createVtpass } from './vtpass.js';
+import { createVtpass, simulatedDelivery } from './vtpass.js';
 import { createWallet } from './wallet.js';
 
 const config = loadConfig();
@@ -27,7 +27,8 @@ if (restored > 0) console.log(`Restored ${restored} memories from Walrus.`);
 memory.sync();
 
 const tatum = createTatum({ url: config.tatumUrl, apiKey: config.tatumKey, usdcType: config.usdcType });
-const vtpass = createVtpass(config.vtpass);
+const realVtpass = createVtpass(config.vtpass);
+const vtpass = config.simulateDelivery ? simulatedDelivery(realVtpass) : realVtpass;
 const wallet = createWallet(config);
 const rates = createRates({ marginPercent: config.rateMarginPercent });
 const owner = ownerStore(`${config.dataDir}/owner.json`);

@@ -13,6 +13,14 @@ export function requestId(now = new Date()) {
   return `${stamp}${randomBytes(6).toString('hex')}`;
 }
 
+// Uses real plan lists but delivers nothing. The agent labels every purchase as simulated.
+export function simulatedDelivery(vtpass) {
+  return {
+    plans: (service) => vtpass.plans(service),
+    buy: async () => ({ status: 'simulated', requestId: requestId() }),
+  };
+}
+
 export function createVtpass({ baseUrl, apiKey, publicKey, secretKey, fetchFn = fetch }) {
   return {
     async plans(service) {

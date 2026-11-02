@@ -62,8 +62,8 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
     const quote = await quoteResponse.json();
     const result = await wallet.buyBundle(`${shopUrl}/buy?quote=${quote.quote}`, limit);
     const delivery = result.body.delivery ?? { status: 'failed', reason: `Shop returned ${result.status}` };
-    if (delivery.status === 'delivered') {
-      learn('data_bought', { naira: plan.naira, days: plan.days, mb: plan.mb });
+    if (delivery.status === 'delivered' || delivery.status === 'simulated') {
+      learn('data_bought',{ naira: plan.naira, days: plan.days, mb: plan.mb });
       return { ...delivery, digest: result.digest };
     }
     return { ...delivery, digest: result.digest };
@@ -71,6 +71,7 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
 
   function deliveryMessage(plan, delivery) {
     if (delivery.status === 'delivered') return `Done. ${plan.name} is on your line.\nPayment: ${delivery.digest}`;
+    if (delivery.status === 'simulated') return `Payment sent to the shop. SIMULATED: no real bundle was delivered for ${plan.name}.\nPayment: ${delivery.digest}`;
     if (delivery.status === 'pending') return `Paid, and VTpass says ${plan.name} is still pending. Check your line, and I'll keep the reference: ${delivery.requestId}`;
     return `Your payment went through, but the bundle was NOT delivered (${delivery.reason}). Payment: ${delivery.digest ?? 'not sent'}`;
   }
@@ -373,7 +374,7 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
       try {
         const delivery = await buyPlan(plan);
         await notify(deliveryMessage(plan, delivery));
-        if (delivery.status === 'delivered') await offerDataAutoIfEarned(plan.naira);
+        if (delivery.status === 'delivered' || delivery.status === 'simulated') await offerDataAutoIfEarned(plan.naira);
       } catch (error) {
         await notify(`I couldn't buy that, and no bundle was delivered: ${error.message}`);
       }

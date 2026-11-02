@@ -105,6 +105,16 @@ test('pays the plan price at most, and records only delivered bundles', async ()
   assert.ok(ctx.events.some((event) => event.type === 'data_bought'));
 });
 
+test('a simulated purchase says so and still teaches the agent', async () => {
+  const ctx = setup({ delivery: { status: 'simulated', requestId: 'r1' } });
+  await ctx.agent.press('network:mtn-data');
+  await ctx.agent.press('budget:2000');
+  await ctx.agent.press('data:buy:best');
+  assert.match(ctx.messages.at(-1).text, /SIMULATED: no real bundle/);
+  assert.doesNotMatch(ctx.messages.at(-1).text, /on your line/);
+  assert.ok(ctx.events.some((event) => event.type === 'data_bought'));
+});
+
 test('never claims delivery when the bundle failed', async () => {
   const ctx = setup({ delivery: { status: 'failed', reason: 'TRANSACTION FAILED' } });
   await ctx.agent.press('network:mtn-data');
