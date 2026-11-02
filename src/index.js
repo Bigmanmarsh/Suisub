@@ -55,4 +55,11 @@ setInterval(() => safely(() => agent.dailyCheck(), 'Daily check'), 3600 * 1000);
 console.log(`Network: ${config.network}`);
 console.log(`Send pay to: ${wallet.address}`);
 console.log(`What it learned: http://localhost:${config.pagePort}`);
-bot.start({ onStart: (info) => console.log(`Telegram bot running: @${info.username}`) });
+await bot.api.setMyCommands([
+  { command: 'start', description: 'Start, or see what I remember' },
+  { command: 'status', description: 'What I know and what I do by myself' },
+  { command: 'bill', description: 'Add a monthly bill: /bill Rent 50 28' },
+  { command: 'data', description: 'Find the best data deal for you' },
+  { command: 'stop', description: 'Turn off autopilot' },
+]);
+bot.start({ onStart:(info) => console.log(`Telegram bot running: @${info.username}`) });
