@@ -65,6 +65,21 @@ test('reads Glo and 9mobile plan names from the VTpass docs', () => {
   assert.deepEqual([read('9mobile Data - 100 Naira - 100MB - 1 day').mb, read('9mobile Data - 100 Naira - 100MB - 1 day').days], [100, 1]);
 });
 
+test('skips plans that only work for certain apps or hours', () => {
+  const read = (name) => parsePlan({ variation_code: 'x', name, variation_amount: '450' });
+  assert.equal(read('Glo TV VOD 2GB 7days Oneoff'), null);
+  assert.equal(read('2GB Night plan - 7 days'), null);
+  assert.ok(read('Glo Data N500 - 1.05GB - 14 days'));
+});
+
+test('reads plan lengths written as words, months and years', () => {
+  const days = (name) => parsePlan({ variation_code: 'x', name, variation_amount: '100.00' })?.days;
+  assert.equal(days('MTN N22000 120GB Monthly Plan + 80mins'), 30);
+  assert.equal(days('MTN N50,000 400GB 3-Month Plan'), 90);
+  assert.equal(days('MTN N100,000 1TB Mobile Data (1 Year)'), 365);
+  assert.equal(parsePlan({ variation_code: 'x', name: '600 Naira Voice Bundle', variation_amount: '600' }), null);
+});
+
 test('picks the most data per naira, then respects what it learned', () => {
   assert.equal(pickPlan(emptyState(), plans).code, 'c');
   const tooExpensive = rebuildState([{ type: 'data_too_expensive', naira: 1500, at: at(1) }]);

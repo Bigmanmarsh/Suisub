@@ -56,7 +56,7 @@ try {
   await agent.handlePay({ digest: `e2e-pay-${Date.now()}-000000`, amount: 0.05 });
   await agent.press(lastButtons[0]);
 
-  await agent.askForData();
+  await agent.press('budget:500');
   await agent.press(lastButtons[0]);
 
   const after = await tatum.usdcBalance(wallet.address);

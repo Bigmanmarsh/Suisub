@@ -56,6 +56,9 @@ export function applyEvent(state, event) {
       data.preferredDays = event.days;
       data.streak += 1;
       break;
+    case 'data_budget_set':
+      data.maxNaira = event.naira;
+      break;
     case 'data_too_expensive':
       data.maxNaira = event.naira - 1;
       data.streak = 0;
@@ -96,18 +99,28 @@ export function shouldOfferDataAuto(state) {
 // Reads "N1000 1.5GB - 30 days" style plan names. Returns null if it can't.
 export function parsePlan(plan) {
   const size = plan.name.match(/([\d.]+)\s*(GB|MB|TB)/i);
-  const time = plan.name.match(/(\d+)\s*[- ]?\s*(hrs?|hours?|days?|weeks?|months?)/i);
-  if (!size || !time) return null;
+  const days = planDays(plan.name);
+  if (!size || days === null || RESTRICTED_PLAN.test(plan.name)) return null;
   const toMb = { MB: 1, GB: 1024, TB: 1024 * 1024 }[size[2].toUpperCase()];
-  const unit = time[2].toLowerCase();
-  const toDays = unit.startsWith('h') ? 1 / 24 : unit.startsWith('d') ? 1 : unit.startsWith('w') ? 7 : 30;
   return {
     code: plan.variation_code,
     name: plan.name,
     naira: Number(plan.variation_amount),
     mb: Number(size[1]) * toMb,
-    days: Number(time[1]) * toDays,
+    days,
   };
+}
+
+// Plans that only work for certain apps or hours, so they aren't real general data.
+const RESTRICTED_PLAN = /\b(tv|vod|night|social|youtube|whatsapp|instagram|tiktok|facebook|opera|voice)\b/i;
+const UNIT_DAYS = { h: 1 / 24, d: 1, w: 7, m: 30, y: 365 };
+const WORD_DAYS = { daily: 1, weekly: 7, monthly: 30 };
+
+function planDays(name) {
+  const time = name.match(/(\d+)\s*[- ]?\s*(hrs?|hours?|days?|weeks?|months?|years?)\b/i);
+  if (time) return Number(time[1]) * UNIT_DAYS[time[2][0].toLowerCase()];
+  const word = name.match(/\b(daily|weekly|monthly)\b/i);
+  return word ? WORD_DAYS[word[1].toLowerCase()] : null;
 }
 
 // The best deal: most data per naira, within the learned price cap and plan length.
@@ -155,6 +168,7 @@ export function describeEvent(event) {
     case 'bill_added': return `User has a monthly bill: ${event.name}, ${event.amount}, due on day ${event.day}.`;
     case 'data_network_set': return `User's data network is ${event.service}.`;
     case 'data_bought': return `User bought a ${event.days}-day data plan for N${event.naira}.`;
+    case 'data_budget_set': return `User's budget for a data plan is N${event.naira}.`;
     case 'data_too_expensive': return `User said N${event.naira} is too expensive for data.`;
     case 'data_auto_on': return `User allowed automatic data purchases up to N${event.limitNaira}.`;
     case 'data_auto_off': return 'User turned off automatic data purchases.';

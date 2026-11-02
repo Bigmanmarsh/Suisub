@@ -82,6 +82,8 @@ test('too expensive is remembered and changes the next offer', async () => {
   const ctx = setup();
   await ctx.agent.press('network:mtn-data');
   await ctx.agent.askForData();
+  assert.match(ctx.messages.at(-1).text, /most you want to spend/);
+  await ctx.agent.press('budget:2000');
   assert.match(ctx.messages.at(-1).text, /6GB/);
   await ctx.agent.press('data:expensive:best');
   assert.match(ctx.messages.at(-1).text, /100MB/);
@@ -91,7 +93,7 @@ test('too expensive is remembered and changes the next offer', async () => {
 test('pays the plan price at most, and records only delivered bundles', async () => {
   const ctx = setup();
   await ctx.agent.press('network:mtn-data');
-  await ctx.agent.askForData();
+  await ctx.agent.press('budget:2000');
   await ctx.agent.press('data:buy:best');
   assert.equal(ctx.bought[0].max, 1);
   assert.match(ctx.bought[0].url, /service=mtn-data&plan=best/);
@@ -101,7 +103,7 @@ test('pays the plan price at most, and records only delivered bundles', async ()
 test('never claims delivery when the bundle failed', async () => {
   const ctx = setup({ delivery: { status: 'failed', reason: 'TRANSACTION FAILED' } });
   await ctx.agent.press('network:mtn-data');
-  await ctx.agent.askForData();
+  await ctx.agent.press('budget:2000');
   await ctx.agent.press('data:buy:best');
   assert.match(ctx.messages.at(-1).text, /NOT delivered/);
   assert.ok(!ctx.events.some((event) => event.type === 'data_bought'));
@@ -113,9 +115,16 @@ test('offers all four networks and buys on the one chosen', async () => {
   assert.deepEqual(ctx.lastButtons(), ['network:mtn-data', 'network:airtel-data', 'network:glo-data', 'network:etisalat-data']);
   await ctx.agent.press('network:etisalat-data');
   assert.match(ctx.messages.at(-1).text, /9mobile/);
-  await ctx.agent.askForData();
+  await ctx.agent.press('budget:2000');
   await ctx.agent.press('data:buy:best');
   assert.match(ctx.bought[0].url, /service=etisalat-data/);
+});
+
+test('asks for a new budget when no plan fits', async () => {
+  const ctx = setup();
+  await ctx.agent.press('network:mtn-data');
+  await ctx.agent.press('budget:50');
+  assert.match(ctx.messages.at(-1).text, /No plan fits N50/);
 });
 
 test('stop takes autopilot back', async () => {

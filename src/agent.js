@@ -7,6 +7,7 @@ import { nairaToUsdc } from './shop.js';
 
 const button = (text, data) => ({ text, data });
 const SAVE_CHOICES = [10, 20, 30, 50];
+const BUDGET_CHOICES = [500, 1000, 2000, 5000];
 const percentRow = (prefix) => SAVE_CHOICES.map((percent) => button(`${percent}%`, `${prefix}:${percent}`));
 const NETWORK_NAMES = { 'mtn-data': 'MTN', 'airtel-data': 'Airtel', 'glo-data': 'Glo', 'etisalat-data': '9mobile' };
 const NETWORK_BUTTONS = [
@@ -191,9 +192,11 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, shopUrl, confi
         await notify('Which network is your line on?', NETWORK_BUTTONS);
         return;
       }
-      const plan = await bestPlan();
+      const { maxNaira } = state().data;
+      const plan = maxNaira === null ? null : await bestPlan();
       if (!plan) {
-        await notify('No plan fits the price limit you taught me. Use /reset_price to clear it.');
+        const intro = maxNaira === null ? 'What is the most you want to spend on a data plan?' : `No plan fits N${maxNaira}. What should your new budget be?`;
+        await notify(intro, [BUDGET_CHOICES.map((naira) => button(`N${naira}`, `budget:${naira}`))]);
         return;
       }
       await this.offerPlan(plan, 'Here you go.');
@@ -211,6 +214,9 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, shopUrl, confi
           learn('data_network_set', { service: value });
           await notify(`Got it: ${NETWORK_NAMES[value]}. Add your monthly bills like this: /bill Rent 50 28\nUse /data to buy data, and /status to see what I know.`);
           return;
+        case 'budget':
+          learn('data_budget_set', { naira: Number(value) });
+          return this.askForData();
         case 'save':
           return this.pressSave(value, extra);
         case 'savepercent': {
