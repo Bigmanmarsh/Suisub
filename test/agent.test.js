@@ -99,7 +99,7 @@ test('pays the plan price at most, and records only delivered bundles', async ()
   await ctx.agent.press('budget:2000');
   await ctx.agent.press('data:buy:best');
   assert.equal(ctx.bought[0].max, 1.02);
-  assert.match(ctx.bought[0].url, /buy?quote=q1/);
+  assert.match(ctx.bought[0].url, /buy\?quote=q1/);
   assert.ok(ctx.events.some((event) => event.type === 'data_bought'));
 });
 
@@ -134,7 +134,7 @@ test('offers show the live rate and its source', async () => {
   const ctx = setup();
   await ctx.agent.press('network:mtn-data');
   await ctx.agent.press('budget:2000');
-  assert.match(ctx.messages.at(-1).text, /N1500.00 per USDC (test/);
+  assert.match(ctx.messages.at(-1).text, /N1500\.00 per USDC \(test/);
 });
 
 test('stop takes autopilot back', async () => {
