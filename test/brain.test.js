@@ -56,6 +56,15 @@ test('reads plan names and skips ones it cannot read', () => {
   assert.equal(parsePlan(plans[4]), null);
 });
 
+test('reads Glo and 9mobile plan names from the VTpass docs', () => {
+  const read = (name) => parsePlan({ variation_code: 'x', name, variation_amount: '100.00' });
+  assert.deepEqual([read('Glo Data N100 - 105MB - 2 day').mb, read('Glo Data N100 - 105MB - 2 day').days], [105, 2]);
+  assert.equal(read('Glo Data N500 - 1.05GB - 14 days').days, 14);
+  const nine = read('9mobile Data - 2000 Naira - 4.5GB Data - 30 Days');
+  assert.deepEqual([nine.mb, nine.days], [4608, 30]);
+  assert.deepEqual([read('9mobile Data - 100 Naira - 100MB - 1 day').mb, read('9mobile Data - 100 Naira - 100MB - 1 day').days], [100, 1]);
+});
+
 test('picks the most data per naira, then respects what it learned', () => {
   assert.equal(pickPlan(emptyState(), plans).code, 'c');
   const tooExpensive = rebuildState([{ type: 'data_too_expensive', naira: 1500, at: at(1) }]);

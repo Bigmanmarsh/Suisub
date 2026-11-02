@@ -8,7 +8,11 @@ import { nairaToUsdc } from './shop.js';
 const button = (text, data) => ({ text, data });
 const SAVE_CHOICES = [10, 20, 30, 50];
 const percentRow = (prefix) => SAVE_CHOICES.map((percent) => button(`${percent}%`, `${prefix}:${percent}`));
-const NETWORK_NAMES = { 'mtn-data': 'MTN', 'airtel-data': 'Airtel' };
+const NETWORK_NAMES = { 'mtn-data': 'MTN', 'airtel-data': 'Airtel', 'glo-data': 'Glo', 'etisalat-data': '9mobile' };
+const NETWORK_BUTTONS = [
+  [button('MTN', 'network:mtn-data'), button('Airtel', 'network:airtel-data')],
+  [button('Glo', 'network:glo-data'), button('9mobile', 'network:etisalat-data')],
+];
 
 export function createAgent({ memory, wallet, tatum, vtpassPlans, shopUrl, config, notify, now = () => new Date() }) {
   const pendingPays = new Map();
@@ -178,9 +182,13 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, shopUrl, confi
       );
     },
 
+    async chooseNetwork() {
+      await notify('Which network is your line on?', NETWORK_BUTTONS);
+    },
+
     async askForData() {
       if (!state().data.service) {
-        await notify('Which network is your line on?', [[button('MTN', 'network:mtn-data'), button('Airtel', 'network:airtel-data')]]);
+        await notify('Which network is your line on?', NETWORK_BUTTONS);
         return;
       }
       const plan = await bestPlan();
@@ -197,7 +205,7 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, shopUrl, confi
       switch (kind) {
         case 'setup':
           learn('save_set', { percent: Number(value) });
-          await notify(`Saved: ${value}% of each payment. Which network is your line on?`, [[button('MTN', 'network:mtn-data'), button('Airtel', 'network:airtel-data')]]);
+          await notify(`Saved: ${value}% of each payment. Which network is your line on?`, NETWORK_BUTTONS);
           return;
         case 'network':
           learn('data_network_set', { service: value });

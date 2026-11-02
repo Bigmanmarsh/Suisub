@@ -6,7 +6,7 @@ import { dirname } from 'node:path';
 import { USDC, USDC_TESTNET, sui } from '@suimpp/mpp/server';
 import { Mppx } from 'mppx/server';
 
-const SERVICES = new Set(['mtn-data', 'airtel-data']);
+const SERVICES = new Set(['mtn-data', 'airtel-data', 'glo-data', 'etisalat-data']);
 
 // Remembers used payments across restarts, so one payment can't buy twice.
 export function fileDigestStore(file) {

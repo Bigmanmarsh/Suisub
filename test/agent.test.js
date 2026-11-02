@@ -107,6 +107,17 @@ test('never claims delivery when the bundle failed', async () => {
   assert.ok(!ctx.events.some((event) => event.type === 'data_bought'));
 });
 
+test('offers all four networks and buys on the one chosen', async () => {
+  const ctx = setup();
+  await ctx.agent.press('setup:20');
+  assert.deepEqual(ctx.lastButtons(), ['network:mtn-data', 'network:airtel-data', 'network:glo-data', 'network:etisalat-data']);
+  await ctx.agent.press('network:etisalat-data');
+  assert.match(ctx.messages.at(-1).text, /9mobile/);
+  await ctx.agent.askForData();
+  await ctx.agent.press('data:buy:best');
+  assert.match(ctx.bought[0].url, /service=etisalat-data/);
+});
+
 test('stop takes autopilot back', async () => {
   const ctx = setup();
   await ctx.agent.press('setup:20');

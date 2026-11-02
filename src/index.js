@@ -60,6 +60,7 @@ await bot.api.setMyCommands([
   { command: 'status', description: 'What I know and what I do by myself' },
   { command: 'bill', description: 'Add a monthly bill: /bill Rent 50 28' },
   { command: 'data', description: 'Find the best data deal for you' },
+  { command: 'network', description: 'Change your network' },
   { command: 'stop', description: 'Turn off autopilot' },
 ]);
 bot.start({ onStart:(info) => console.log(`Telegram bot running: @${info.username}`) });

@@ -41,6 +41,7 @@ export function createBot({ token, owner, getAgent, botInfo }) {
   bot.command('status', () => getAgent().status());
   bot.command('bill', (ctx) => getAgent().addBill(ctx.match));
   bot.command('data', () => getAgent().askForData());
+  bot.command('network', () => getAgent().chooseNetwork());
   bot.command('stop', () => getAgent().stopAutopilot());
   bot.on('callback_query:data', async (ctx) => {
     await ctx.answerCallbackQuery();
