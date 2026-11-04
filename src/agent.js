@@ -3,6 +3,7 @@ import {
   billsDueSoon, estimateMonthlyMb, nextDataDue, planForPay, rebuildState,
   shouldOfferDataAuto, shouldOfferSaveAuto, suggestPlans,
 } from './brain.js';
+import { maskPhone, normalizePhone } from './phone.js';
 import { nairaToUsdc } from './shop.js';
 
 const button = (text, data) => ({ text, data });
@@ -22,7 +23,7 @@ const NETWORK_BUTTONS = [
   [button('Glo', 'network:glo-data'), button('9mobile', 'network:etisalat-data')],
 ];
 
-export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl, config, notify, now = () => new Date(), fetchFn = fetch }) {
+export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, phone = { get: () => null, set() {} }, shopUrl, config, notify, now = () => new Date(), fetchFn = fetch }) {
   const pendingPays = new Map();
   const pendingPlans = new Map();
   const seenPayments = new Set();
@@ -54,6 +55,7 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
   }
 
   async function buyPlan(plan) {
+    if (!phone.get()) throw new Error('no phone number is set. Send /phone 0803 123 4567 first');
     const { service } = state().data;
     const { rate } = await rates.current();
     const limit = Number(nairaToUsdc(plan.naira, rate)) * (1 + PRICE_TOLERANCE);
@@ -111,6 +113,7 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
       for (const bill of current.bills) lines.push(`Bill: ${bill.name}, ${bill.amount}, day ${bill.day}`);
       const balance = await tatum.usdcBalance(wallet.address).catch(() => null);
       lines.push(`Agent wallet: ${balance === null ? 'balance unavailable' : `${balance} USDC`}`);
+      lines.push(`Data goes to: ${phone.get() ? maskPhone(phone.get()) : 'no number set (/phone)'}`);
       lines.push(`Send pay to: ${wallet.address}`);
       await notify(lines.join('\n'));
     },
@@ -225,6 +228,18 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, shopUrl
           ...usageRows().slice(0, 1),
         ],
       );
+    },
+
+    async setPhone(text) {
+      const value = normalizePhone(text ?? '');
+      if (!value) {
+        const current = phone.get();
+        await notify(`${current ? `Data goes to ${maskPhone(current)}. ` : ''}To set your number, send it like this: /phone 0803 123 4567
+It stays on this computer and is never stored on Walrus.`);
+        return;
+      }
+      phone.set(value);
+      await notify(`Saved. Data will go to ${maskPhone(value)}. This number stays on this computer and is never stored on Walrus.`);
     },
 
     async chooseNetwork() {

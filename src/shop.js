@@ -52,6 +52,9 @@ export function createShopHandler({ mppx, vtpass, ownerPhone, rates, now = () =>
     if (pathname === '/quote') return createQuote(searchParams);
     if (pathname !== '/buy') return Response.json({ error: 'Not found' }, { status: 404 });
 
+    const phone = typeof ownerPhone === 'function' ? ownerPhone() : ownerPhone;
+    if (!phone) return Response.json({ error: 'No phone number set' }, { status: 409 });
+
     const id = searchParams.get('quote');
     const quote = quotes.get(id);
     if (!quote || quote.expiresAt < now()) return Response.json({ error: 'Quote expired' }, { status: 410 });
@@ -60,13 +63,13 @@ export function createShopHandler({ mppx, vtpass, ownerPhone, rates, now = () =>
     if (result.status === 402) return result.challenge;
 
     quotes.delete(id);
-    const delivery = await vtpass.buy({ service: quote.service, planCode: quote.plan.variation_code, phone: ownerPhone })
+    const delivery = await vtpass.buy({ service: quote.service, planCode: quote.plan.variation_code, phone })
       .catch((error) => ({ status: 'failed', reason: error.message }));
     return result.withReceipt(Response.json({ delivery, plan: quote.plan.name, amount: quote.amount }));
   };
 }
 
-export function startShop({ config, vtpass, rates }) {
+export function startShop({ config, vtpass, rates, ownerPhone = config.ownerPhone }) {
   const mppx = Mppx.create({
     realm: 'bundle-shop',
     secretKey: config.paymentSecret,
@@ -79,7 +82,7 @@ export function startShop({ config, vtpass, rates }) {
       }),
     ],
   });
-  const handle = createShopHandler({ mppx, vtpass, ownerPhone: config.ownerPhone, rates });
+  const handle = createShopHandler({ mppx, vtpass, ownerPhone, rates });
 
   // Listens on this computer only: the shop is not open to the internet.
   const server = createServer(async (req, res) => {

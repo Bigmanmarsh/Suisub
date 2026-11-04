@@ -38,3 +38,4 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Our target: Wed 4 Nov.
 ## 2026-11-04
 - MAINNET agent payment passed: the agent paid 0.075145 USDC over HTTP 402 (MPP on Sui) for an N100 MTN plan, at the live CoinGecko rate. Delivery simulated because VTpass keys still fail.
   Transaction: 4rkG2LHvqqF6x4Drauow8FYp1ZaQra1FAC7HNr6eUMjs
+- Live bot switched to Mainnet. Added /phone: the number stays in a local file, is shown masked, and is never stored on Walrus. The shop refuses before payment if no number is set.

@@ -42,6 +42,7 @@ export function createBot({ token, owner, getAgent, botInfo }) {
   bot.command('status', () => getAgent().status());
   bot.command('bill', (ctx) => getAgent().addBill(ctx.match));
   bot.command('data', () => getAgent().askForData());
+  bot.command('phone', (ctx) => getAgent().setPhone(ctx.match));
   bot.command('usage', () => getAgent().askUsage());
   bot.command('network',() => getAgent().chooseNetwork());
   bot.command('stop', () => getAgent().stopAutopilot());

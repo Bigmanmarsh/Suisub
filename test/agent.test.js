@@ -24,6 +24,7 @@ function setup({ delivery = { status: 'delivered', requestId: 'r1' }, plans = PL
     tatum: { usdcBalance: async () => 5, incomingPayments: async () => [] },
     vtpassPlans: async () => plans,
     rates: { current: async () => ({ rate: 1500, source: 'test' }) },
+    phone: { get: () => '08011111111', set() {} },
     fetchFn: async (url) => { quoteUrls.push(url); return Response.json({ quote: 'q1', amount: '1.000000' }); },
     shopUrl: 'http://shop',
     config: { savingsAddress: '0xsavings' },

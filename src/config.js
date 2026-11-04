@@ -30,7 +30,7 @@ export function loadConfig() {
     savingsAddress: required(mainnet ? 'MAINNET_SAVINGS_ADDRESS' : 'SAVINGS_ADDRESS'),
     paymentSecret: required('PAYMENT_SECRET_KEY'),
     rateMarginPercent: Number(process.env.RATE_MARGIN_PERCENT ?? 1),
-    ownerPhone: required('OWNER_PHONE'),
+    ownerPhone: process.env.OWNER_PHONE?.trim() || null,
     simulateDelivery: process.env.VTPASS_MODE === 'simulated',
     vtpass: {
       baseUrl: process.env.VTPASS_MODE === 'live' ? 'https://vtpass.com/api' : 'https://sandbox.vtpass.com/api',

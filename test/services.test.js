@@ -127,9 +127,9 @@ test('VTpass: only "delivered" counts as delivered', async () => {
 function shopFixture() {
   const bought = [];
   const charges = [];
-  const context = { bought, charges, paid: false, rate: 1500, time: 0 };
+  const context = { bought, charges, paid: false, rate: 1500, time: 0, phone: '08011111111' };
   context.handle = createShopHandler({
-    ownerPhone: '08011111111',
+    ownerPhone: () => context.phone,
     now: () => context.time,
     rates: { current: async () => ({ rate: context.rate, source: 'test' }) },
     vtpass: {
@@ -172,6 +172,14 @@ test('shop: a rate change cannot change a quoted price', async () => {
   shop.paid = true;
   await shop.buy(quote);
   assert.deepEqual(shop.charges, ['0.100000', '0.100000']);
+});
+
+test('shop: refuses before payment when no phone is set', async () => {
+  const shop = shopFixture();
+  const { quote } = await shop.quote();
+  shop.phone = null;
+  assert.equal((await shop.buy(quote)).status, 409);
+  assert.deepEqual(shop.charges, []);
 });
 
 test('shop: a quote buys once and then expires', async () => {

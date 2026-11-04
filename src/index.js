@@ -5,6 +5,7 @@ import { createBot, ownerStore, toKeyboard } from './bot.js';
 import { loadConfig } from './config.js';
 import { createMemory } from './memory.js';
 import { startPage } from './page.js';
+import { phoneStore } from './phone.js';
 import { createRates } from './rate.js';
 import { startShop } from './shop.js';
 import { createTatum } from './tatum.js';
@@ -31,6 +32,7 @@ const realVtpass = createVtpass(config.vtpass);
 const vtpass = config.simulateDelivery ? simulatedDelivery(realVtpass) : realVtpass;
 const wallet = createWallet(config);
 const rates = createRates({ marginPercent: config.rateMarginPercent });
+const phone = phoneStore(`${config.dataDir}/phone.json`, config.ownerPhone);
 const owner = ownerStore(`${config.dataDir}/owner.json`, config.ownerChatId);
 
 const bot = createBot({ token: config.telegramToken, owner, getAgent: () => agent });
@@ -40,6 +42,7 @@ const agent = createAgent({
   tatum,
   vtpassPlans: (service) => vtpass.plans(service),
   rates,
+  phone,
   shopUrl: `http://localhost:${config.shopPort}`,
   config,
   async notify(text, buttons) {
@@ -48,7 +51,7 @@ const agent = createAgent({
   },
 });
 
-startShop({ config, vtpass, rates });
+startShop({ config, vtpass, rates, ownerPhone: phone.get });
 startPage({ memory, port: config.pagePort, host: config.pageHost, isPublic: config.pagePublic });
 
 await agent.skipOldPayments().catch((error) => console.error('Tatum:', error.message));
@@ -65,6 +68,7 @@ await bot.api.setMyCommands([
   { command: 'bill', description: 'Add a monthly bill: /bill Rent 50 28' },
   { command: 'data', description: 'Find the best data deal for you' },
   { command: 'usage', description: 'Tell me how much data you use' },
+  { command: 'phone', description: 'Set the number that gets your data' },
   { command: 'network', description: 'Change your network' },
   { command: 'stop', description: 'Turn off autopilot' },
 ]);
