@@ -62,7 +62,9 @@ setInterval(() => safely(() => agent.dailyCheck(), 'Daily check'), 3600 * 1000);
 console.log(`Network: ${config.network}`);
 console.log(`Send pay to: ${wallet.address}`);
 console.log(`What it learned: http://localhost:${config.pagePort}`);
-await bot.api.setMyCommands([
+// The menu is a nice-to-have, so a network blip here must not stop the agent.
+// Only the message is logged: the full error includes a URL with the bot token.
+bot.api.setMyCommands([
   { command: 'start', description: 'Start, or see what I remember' },
   { command: 'status', description: 'What I know and what I do by myself' },
   { command: 'bill', description: 'Add a monthly bill: /bill Rent 50 28' },
@@ -71,5 +73,5 @@ await bot.api.setMyCommands([
   { command: 'phone', description: 'Set the number that gets your data' },
   { command: 'network', description: 'Change your network' },
   { command: 'stop', description: 'Turn off autopilot' },
-]);
+]).catch((error) => console.error('Telegram menu not updated:', error.message));
 bot.start({ onStart:(info) => console.log(`Telegram bot running: @${info.username}`) });
