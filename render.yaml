@@ -1,0 +1,41 @@
+# Render Blueprint: one free web service. Values marked sync: false are private and
+# are typed into Render's dashboard, never committed here.
+services:
+  - type: web
+    name: suisub
+    runtime: node
+    plan: free
+    buildCommand: npm install --ignore-scripts
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NETWORK
+        value: mainnet
+      - key: VTPASS_MODE
+        value: simulated
+      - key: PAGE_HOST
+        value: 0.0.0.0
+      - key: PAGE_PUBLIC
+        value: "true"
+      - key: POLL_SECONDS
+        value: "60"
+      - key: TATUM_API_KEY
+        sync: false
+      - key: MEMWAL_KEY
+        sync: false
+      - key: MEMWAL_ACCOUNT_ID
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: MAINNET_AGENT_KEY
+        sync: false
+      - key: MAINNET_SHOP_ADDRESS
+        sync: false
+      - key: MAINNET_SAVINGS_ADDRESS
+        sync: false
+      - key: PAYMENT_SECRET_KEY
+        sync: false
+      - key: OWNER_CHAT_ID
+        sync: false
+      - key: OWNER_PHONE
+        sync: false
