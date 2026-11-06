@@ -197,8 +197,8 @@ test('rejects a badly written bill', async () => {
 test('status and start-up message show where money goes', async () => {
   const ctx = setup();
   await ctx.agent.announceAddresses();
-  assert.match(ctx.messages.at(-1).text, /Savings go to: 0xsavings/);
+  assert.match(ctx.messages.at(-1).text, /Savings go to: 0xsaving…ings/);
   await ctx.agent.status();
-  assert.match(ctx.messages.at(-1).text, /Savings go to: 0xsavings/);
+  assert.match(ctx.messages.at(-1).text, /Savings go to: 0xsaving…ings/);
   assert.match(ctx.messages.at(-1).text, /Shop payments go to: /);
 });
