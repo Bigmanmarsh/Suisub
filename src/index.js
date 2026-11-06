@@ -56,7 +56,24 @@ startPage({ memory, port: config.pagePort, host: config.pageHost, isPublic: conf
 
 await agent.skipOldPayments().catch((error) => console.error('Tatum:', error.message));
 const safely = (job, label) => job().catch((error) => console.error(`${label}:`, error.message));
-setInterval(() => safely(() => agent.checkPayments(), 'Payment check'), config.pollSeconds * 1000);
+
+// Pay checks fail quietly once or twice on a bad connection. After several in a row,
+// the owner is told once, so a missed alert is never silent.
+const WARN_AFTER_FAILURES = 5;
+let failures = 0;
+setInterval(async () => {
+  try {
+    await agent.checkPayments();
+    if (failures >= WARN_AFTER_FAILURES) await agent.notifyText('I can check for incoming pay again.');
+    failures = 0;
+  } catch (error) {
+    failures += 1;
+    console.error('Payment check:', error.message);
+    if (failures === WARN_AFTER_FAILURES) {
+      await agent.notifyText(`I can't check for incoming pay right now (${error.message}). I'll keep trying.`).catch(() => {});
+    }
+  }
+}, config.pollSeconds * 1000);
 setInterval(() => safely(() => agent.dailyCheck(), 'Daily check'), 3600 * 1000);
 
 console.log(`Network: ${config.network}`);

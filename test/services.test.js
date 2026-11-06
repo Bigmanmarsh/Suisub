@@ -78,8 +78,9 @@ test('Tatum: counts only USDC that came from someone else', async () => {
     url: 'http://t',
     apiKey: 'k',
     usdcType: USDC,
-    fetchFn: async () => json({
+    fetchFn: async (_, init) => json({
       data: {
+        checkpoint: { sequenceNumber: 500000 },
         transactions: {
           nodes: [
             tx('pay', '0xclient', '2500000'),
@@ -94,6 +95,25 @@ test('Tatum: counts only USDC that came from someone else', async () => {
   });
   const payments = await tatum.incomingPayments('0xme');
   assert.deepEqual(payments.map((p) => [p.digest, p.amount]), [['pay', 2.5]]);
+});
+
+test('Tatum: searches from a recent checkpoint, then moves forward', async () => {
+  const afters = [];
+  let latest = 1000000;
+  const tatum = createTatum({
+    url: 'http://t',
+    apiKey: 'k',
+    usdcType: USDC,
+    fetchFn: async (_, init) => {
+      const { variables } = JSON.parse(init.body);
+      if (variables?.after !== undefined) afters.push(variables.after);
+      return json({ data: { checkpoint: { sequenceNumber: latest }, transactions: { nodes: [] } } });
+    },
+  });
+  await tatum.incomingPayments('0xme');
+  latest = 1000600;
+  await tatum.incomingPayments('0xme');
+  assert.deepEqual(afters, [700000, 999900]);
 });
 
 test('Tatum: reports errors instead of hiding them', async () => {

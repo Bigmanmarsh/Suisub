@@ -40,3 +40,7 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Our target: Wed 4 Nov.
   Transaction: 4rkG2LHvqqF6x4Drauow8FYp1ZaQra1FAC7HNr6eUMjs
 - Live bot switched to Mainnet. Added /phone: the number stays in a local file, is shown masked, and is never stored on Walrus. The shop refuses before payment if no number is set.
 - Hosted on Render (free) at https://suisub.onrender.com. On first boot it had no local files and rebuilt all 12 memories from Walrus. Public page hides bill details. Laptop copy stopped.
+
+## 2026-11-06
+- Found a Mainnet-only bug: Tatum's Mainnet node refuses an open-ended transaction search ("below earliest available"), so pay alerts never fired. The search now starts from a recent checkpoint and moves forward, still one call per check. The owner is now told if pay checks keep failing.
+- Hosted bot had the testnet key in MAINNET_AGENT_KEY. Fixed in Render.

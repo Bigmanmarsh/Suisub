@@ -86,6 +86,7 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, phone =
 
   return {
     state,
+    notifyText: (text) => notify(text),
     address: wallet.address,
 
     async start() {
