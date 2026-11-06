@@ -44,13 +44,16 @@ Delete the local files and the agent rebuilds what it knows from Walrus.
 - **It can't see your phone's data usage.** The estimate comes from what you tell it, what you buy, and whether you ran out.
 - **"Best" means best among the VTpass plans it can read,** not across the whole market. Plans with unusual names are skipped.
 - **The managed Walrus relayer can read memories while processing them,** so the agent doesn't store phone numbers or real names there.
-- **It runs for one person on their own computer.** Purchases go only to the owner's line. It's not a service for other people.
+- **It serves one person.** Only the owner can use the bot, and purchases go only to the owner's line. It's not a service for other people.
+- **Payout addresses are only as good as the settings.** In testing, a wrong address in the hosting settings sent 2.34 USDC to an address nobody controls. The bot now announces where savings and shop payments go every time it starts, and shows them in `/status`.
 
 ## Current status
 
-- Walrus Memory: writing on Mainnet.
-- Tatum reads, savings transfers and MPP payments: tested on Sui testnet.
-- VTpass plan lists: working. Bundle orders: not yet working.
+- **Walrus Memory:** writing on Mainnet. On a fresh server, the agent rebuilt everything it knew from Walrus.
+- **Tatum Sui gateway:** detects real incoming USDC on Mainnet.
+- **Savings and MPP agent payments:** real USDC on Sui Mainnet. For example, the agent paid the shop for a plan in [this transaction](https://suiscan.xyz/mainnet/tx/AzrBLkZ2CpShZKtjTB1mYKGQScByzzpeDKMbjp6XXyfr).
+- **Hosting:** runs online on Render's free plan, with a public "What it learned" page at [suisub.onrender.com](https://suisub.onrender.com).
+- **VTpass:** plan lists work. Bundle orders aren't working yet, so delivery is simulated and labelled as such.
 
 ## Run it
 
