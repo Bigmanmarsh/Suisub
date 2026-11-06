@@ -54,6 +54,7 @@ const agent = createAgent({
 startShop({ config, vtpass, rates, ownerPhone: phone.get });
 startPage({ memory, port: config.pagePort, host: config.pageHost, isPublic: config.pagePublic });
 
+await agent.announceAddresses().catch((error) => console.error('Telegram:', error.message));
 await agent.skipOldPayments().catch((error) => console.error('Tatum:', error.message));
 const safely = (job, label) => job().catch((error) => console.error(`${label}:`, error.message));
 

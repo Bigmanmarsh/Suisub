@@ -44,3 +44,4 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Our target: Wed 4 Nov.
 ## 2026-11-06
 - Found a Mainnet-only bug: Tatum's Mainnet node refuses an open-ended transaction search ("below earliest available"), so pay alerts never fired. The search now starts from a recent checkpoint and moves forward, still one call per check. The owner is now told if pay checks keep failing.
 - Hosted bot had the testnet key in MAINNET_AGENT_KEY. Fixed in Render.
+- LOSS: the hosted bot's MAINNET_SHOP_ADDRESS and MAINNET_SAVINGS_ADDRESS were set to the testnet shop address (0x045932…edd1), whose key was never saved. Two Mainnet payments (0.092986 saving and 2.247961 purchase, 2.340947 USDC total) went there and can't be recovered. The bot now announces both addresses on start and in /status.

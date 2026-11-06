@@ -193,3 +193,12 @@ test('rejects a badly written bill', async () => {
   await ctx.agent.addBill('Rent 50 28');
   assert.deepEqual(ctx.agent.state().bills, [{ name: 'Rent', amount: 50, day: 28 }]);
 });
+
+test('status and start-up message show where money goes', async () => {
+  const ctx = setup();
+  await ctx.agent.announceAddresses();
+  assert.match(ctx.messages.at(-1).text, /Savings go to: 0xsavings/);
+  await ctx.agent.status();
+  assert.match(ctx.messages.at(-1).text, /Savings go to: 0xsavings/);
+  assert.match(ctx.messages.at(-1).text, /Shop payments go to: /);
+});

@@ -15,7 +15,8 @@ const usageRows = () => [
   [button('Not sure', 'usage:unsure')],
 ];
 const formatGb = (mb) => `${Math.round((mb / 1024) * 10) / 10}GB`;
-const PRICE_TOLERANCE = 0.02; // how far a shop quote may move above the price just shown
+const PRICE_TOLERANCE = 0.02;
+const shortAddress = (address) => (address ? `${address.slice(0, 8)}…${address.slice(-4)}` : 'not set'); // how far a shop quote may move above the price just shown
 const percentRow = (prefix) => SAVE_CHOICES.map((percent) => button(`${percent}%`, `${prefix}:${percent}`));
 const NETWORK_NAMES = { 'mtn-data': 'MTN', 'airtel-data': 'Airtel', 'glo-data': 'Glo', 'etisalat-data': '9mobile' };
 const NETWORK_BUTTONS = [
@@ -87,6 +88,14 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, phone =
   return {
     state,
     notifyText: (text) => notify(text),
+
+    // Sent on every start, so a wrong address in the settings is spotted before money moves.
+    async announceAddresses() {
+      await notify(`I'm running on ${config.network}.
+Savings go to: ${shortAddress(config.savingsAddress)}
+Shop payments go to: ${shortAddress(config.shopAddress)}
+If either isn't your wallet, don't tap Yes or Buy until the settings are fixed.`);
+    },
     address: wallet.address,
 
     async start() {
@@ -115,6 +124,8 @@ export function createAgent({ memory, wallet, tatum, vtpassPlans, rates, phone =
       const balance = await tatum.usdcBalance(wallet.address).catch(() => null);
       lines.push(`Agent wallet: ${balance === null ? 'balance unavailable' : `${balance} USDC`}`);
       lines.push(`Data goes to: ${phone.get() ? maskPhone(phone.get()) : 'no number set (/phone)'}`);
+      lines.push(`Savings go to: ${shortAddress(config.savingsAddress)}`);
+      lines.push(`Shop payments go to: ${shortAddress(config.shopAddress)}`);
       lines.push(`Send pay to: ${wallet.address}`);
       await notify(lines.join('\n'));
     },
