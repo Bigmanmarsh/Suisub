@@ -5,7 +5,16 @@ const CACHE_MS = 5 * 60 * 1000;
 const MAX_AGE_MS = 60 * 60 * 1000;
 const DAY_AGE_MS = 26 * 60 * 60 * 1000;
 
-const SOURCES = [
+// Tatum's Data API comes first when there's a key; the public sources are backups.
+const tatumSource = (apiKey) => ({
+  name: 'Tatum Data API',
+  url: 'https://api.tatum.io/v4/data/rate/symbol?symbol=USDC&basePair=NGN',
+  headers: { 'x-api-key': apiKey },
+  maxAgeMs: MAX_AGE_MS,
+  read: (body) => ({ rate: Number(body.value), updatedAt: body.timestamp }),
+});
+
+const PUBLIC_SOURCES = [
   {
     name: 'CoinGecko',
     url: 'https://api.coingecko.com/api/v3/simple/price?ids=usd-coin&vs_currencies=ngn&include_last_updated_at=true',
@@ -21,11 +30,12 @@ const SOURCES = [
   },
 ];
 
-export function createRates({ marginPercent = 0, fetchFn = fetch, now = () => Date.now() } = {}) {
+export function createRates({ marginPercent = 0, tatumKey = null, fetchFn = fetch, now = () => Date.now() } = {}) {
+  const SOURCES = tatumKey ? [tatumSource(tatumKey), ...PUBLIC_SOURCES] : PUBLIC_SOURCES;
   let cached = null;
 
   async function fromSource(source) {
-    const response = await fetchFn(source.url, { signal: AbortSignal.timeout(15000) });
+    const response = await fetchFn(source.url, { headers: source.headers, signal: AbortSignal.timeout(15000) });
     if (!response.ok) throw new Error(`${source.name} returned HTTP ${response.status}`);
     const { rate, updatedAt } = source.read(await response.json());
     if (!(rate > 0)) throw new Error(`${source.name} returned no rate`);

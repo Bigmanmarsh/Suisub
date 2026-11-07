@@ -235,6 +235,8 @@ export function billsDueSoon(state, now, days = 2) {
   });
 }
 
+const NETWORK_LABELS = { 'mtn-data': 'MTN', 'airtel-data': 'Airtel', 'glo-data': 'Glo', 'etisalat-data': '9mobile' };
+
 // Plain-English sentence stored with each event, so memories are readable and searchable.
 export function describeEvent(event) {
   switch (event.type) {
@@ -244,7 +246,7 @@ export function describeEvent(event) {
     case 'save_auto_on': return 'User allowed the agent to save automatically.';
     case 'save_auto_off': return 'User turned off automatic saving.';
     case 'bill_added': return `User has a monthly bill: ${event.name}, ${event.amount}, due on day ${event.day}.`;
-    case 'data_network_set': return `User's data network is ${event.service}.`;
+    case 'data_network_set': return `User's data network is ${NETWORK_LABELS[event.service] ?? event.service}.`;
     case 'data_bought': return `User bought a ${event.days}-day data plan for N${event.naira}.`;
     case 'data_usage_set': return `User says they use about ${event.gb}GB of data a month.`;
     case 'data_ran_out': return 'User ran out of data early, so they need more than estimated.';

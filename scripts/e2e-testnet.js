@@ -32,7 +32,7 @@ const fakeVtpass = {
   plans: async () => [{ variation_code: 'mtn-10mb-100', name: 'N100 100MB - 24 hrs', variation_amount: '100.00' }],
   buy: async () => ({ status: 'delivered', requestId: 'fake-vtpass' }),
 };
-const rates = createRates({ marginPercent: config.rateMarginPercent });
+const rates = createRates({ marginPercent: config.rateMarginPercent, tatumKey: config.tatumKey });
 const shop = startShop({ config, vtpass: fakeVtpass, rates });
 
 let lastButtons = [];

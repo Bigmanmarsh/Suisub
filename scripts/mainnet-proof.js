@@ -12,7 +12,7 @@ if (config.network !== 'mainnet') throw new Error('Run with NETWORK=mainnet');
 const MAX_USDC = 0.2; // hard stop for this proof
 
 const vtpass = simulatedDelivery(createVtpass(config.vtpass));
-const rates = createRates({ marginPercent: config.rateMarginPercent });
+const rates = createRates({ marginPercent: config.rateMarginPercent, tatumKey: config.tatumKey });
 const shop = startShop({ config, vtpass, rates });
 const tatum = createTatum({ url: config.tatumUrl, apiKey: config.tatumKey, usdcType: config.usdcType });
 const wallet = createWallet(config);

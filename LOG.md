@@ -51,3 +51,6 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Our target: Wed 4 Nov.
 - X post: https://x.com/Mxrshxll_on_X/status/2118639664181506300 (Tatum and Walrus both commented).
 - Blog published: https://dev.to/bigmanmarsh/my-money-had-no-memory-so-i-built-an-agent-that-does-3bnp
 - SUBMITTED to Total Recall on 2026-11-07, before the 2026-11-10 17:00 UTC deadline.
+
+## 2026-11-07 (after submitting)
+- Compared with a rival in our track (Tideover). Closed the gaps: the naira rate now comes from Tatum's Data API first; the public page compares the agent with memory on vs off using live plan prices; a new /try page lets anyone run the agent's real learning code in the browser, on the owner's real memories, with no money and no Walrus writes.

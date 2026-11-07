@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { createMemory, decodeMemory, encodeMemory } from '../src/memory.js';
-import { renderPage } from '../src/page.js';
+import { publicEvent, renderPage } from '../src/page.js';
 import { createRates } from '../src/rate.js';
 import { createShopHandler, nairaToUsdc } from '../src/shop.js';
 import { createTatum } from '../src/tatum.js';
@@ -222,6 +222,18 @@ test('rate: uses the live source and applies the margin', async () => {
   assert.equal(current.source, 'CoinGecko');
 });
 
+test('rate: Tatum Data API comes first when there is a key', async () => {
+  const seen = [];
+  const fetchFn = async (url, init) => {
+    seen.push([url, init.headers?.['x-api-key']]);
+    return json({ value: '1347.35', timestamp: 1000 * 1000, source: 'CoinGecko' });
+  };
+  const current = await createRates({ tatumKey: 'k', fetchFn, now: () => 1000 * 1000 + 60000 }).current();
+  assert.equal(current.source, 'Tatum Data API');
+  assert.equal(current.rate, 1347.35);
+  assert.deepEqual(seen[0], ['https://api.tatum.io/v4/data/rate/symbol?symbol=USDC&basePair=NGN', 'k']);
+});
+
 test('rate: falls back, and refuses when nothing is fresh', async () => {
   const time = 100000 * 1000;
   const fallback = async (url) => (url.includes('coingecko')
@@ -255,4 +267,28 @@ test('public page hides bill details but keeps the lessons', () => {
   const html = renderPage(records, { isPublic: true });
   assert.doesNotMatch(html, /Rent/);
   assert.match(html, /added a monthly bill/);
+});
+
+test('page compares the agent with memory on and off, using real plans', () => {
+  const plans = [
+    { variation_code: 'small', name: 'N1000 1.5GB - 30 days', variation_amount: '1000' },
+    { variation_code: 'mid', name: 'N2500 6GB - 30 days', variation_amount: '2500' },
+    { variation_code: 'huge', name: 'N7000 40GB - 30 days', variation_amount: '7000' },
+  ];
+  const html = renderPage([
+    { event: { type: 'data_network_set', service: 'mtn-data', at: '2026-11-01T10:00:00.000Z' }, blobId: 'a' },
+    { event: { type: 'data_usage_set', gb: 5, at: '2026-11-02T10:00:00.000Z' }, blobId: 'b' },
+  ], { isPublic: true, plans });
+  const on = html.slice(html.indexOf('Memory on (from Walrus)'), html.indexOf('Memory off'));
+  const off = html.slice(html.indexOf('Memory off'));
+  assert.ok(on.includes('Suggests N2500 6GB - 30 days (for about 5GB a month)'));
+  assert.ok(off.includes('Suggests N7000 40GB - 30 days (best value, with no idea how much you use)'));
+  assert.ok(html.includes('href="/try"'));
+});
+
+test('public try data hides bill names and amounts', () => {
+  const event = publicEvent({ type: 'bill_added', name: 'Rent', amount: 50, day: 28, at: 'x' });
+  assert.equal(event.name, 'a bill');
+  assert.equal(event.amount, 0);
+  assert.equal(event.day, 28);
 });

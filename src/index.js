@@ -31,8 +31,17 @@ const tatum = createTatum({ url: config.tatumUrl, apiKey: config.tatumKey, usdcT
 const realVtpass = createVtpass(config.vtpass);
 const vtpass = config.simulateDelivery ? simulatedDelivery(realVtpass) : realVtpass;
 const wallet = createWallet(config);
-const rates = createRates({ marginPercent: config.rateMarginPercent });
+const rates = createRates({ marginPercent: config.rateMarginPercent, tatumKey: config.tatumKey });
 const phone = phoneStore(`${config.dataDir}/phone.json`, config.ownerPhone);
+// Plan lists change rarely, so the public page reuses them for an hour.
+const planCache = new Map();
+async function cachedPlans(service) {
+  const hit = planCache.get(service);
+  if (hit && Date.now() - hit.at < 3600 * 1000) return hit.plans;
+  const plans = await vtpass.plans(service);
+  planCache.set(service, { plans, at: Date.now() });
+  return plans;
+}
 const owner = ownerStore(`${config.dataDir}/owner.json`, config.ownerChatId);
 
 const bot = createBot({ token: config.telegramToken, owner, getAgent: () => agent });
@@ -52,7 +61,7 @@ const agent = createAgent({
 });
 
 startShop({ config, vtpass, rates, ownerPhone: phone.get });
-startPage({ memory, port: config.pagePort, host: config.pageHost, isPublic: config.pagePublic });
+startPage({ memory, port: config.pagePort, host: config.pageHost, isPublic: config.pagePublic, getPlans: cachedPlans });
 
 await agent.announceAddresses().catch((error) => console.error('Telegram:', error.message));
 await agent.skipOldPayments().catch((error) => console.error('Tatum:', error.message));
