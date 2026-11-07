@@ -4,6 +4,8 @@ A Telegram money agent for people paid in crypto. It spots your pay on Sui, reme
 
 Built for the Total Recall hackathon (Tatum x Walrus Memory), Consumer Finance track.
 
+[Demo video](https://x.com/Mxrshxll_on_X/status/2118639664181506300) · [Blog post](https://dev.to/bigmanmarsh/my-money-had-no-memory-so-i-built-an-agent-that-does-3bnp) · [What it learned, live](https://suisub.onrender.com)
+
 ## The problem
 
 When pay lands, it's easy to forget to save some and end up spending it. When data runs out, you hunt for a deal all over again. Most money apps ask the same questions every time.

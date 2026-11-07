@@ -18,6 +18,13 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Field names come from Arena'
 - How was your experience building with Walrus? (draft below, change it to your own words)
 - How was your experience building with the Tatum AI Builder? (draft below)
 
+## Links
+
+- Blog post: https://dev.to/bigmanmarsh/my-money-had-no-memory-so-i-built-an-agent-that-does-3bnp
+- Demo video (X): https://x.com/Mxrshxll_on_X/status/2118639664181506300
+- GitHub: https://github.com/Bigmanmarsh/Suisub
+- Live page: https://suisub.onrender.com
+
 ## Project description
 
 Suisub is a Telegram money agent for people paid in crypto. It spots incoming USDC on Sui through Tatum, remembers your bills, savings habits and data usage on Walrus Memory Mainnet, and suggests data plans for MTN, Airtel, Glo and 9mobile with cheaper and bigger options. It starts by asking, learns from every answer and correction, and earns permission to act alone within limits you set. The agent pays for purchases itself over HTTP 402 using MPP on Sui. A "What it learned" page shows every memory and how it changed the agent.
