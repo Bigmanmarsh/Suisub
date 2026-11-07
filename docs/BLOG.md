@@ -59,6 +59,6 @@ Real bundle delivery once VTpass access is approved, refunds if an order fails a
 
 The code is open source: https://github.com/Bigmanmarsh/Suisub
 
-<!-- ADD the X post link here once it's live -->
+Watch the demo on X: https://x.com/Mxrshxll_on_X/status/2118639664181506300
 
 Built with Tatum, Walrus Memory and Sui for Total Recall.

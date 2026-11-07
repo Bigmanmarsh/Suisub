@@ -48,3 +48,4 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Our target: Wed 4 Nov.
 
 ## 2026-11-07
 - Called VTpass: sandbox first, then a form to go live. Emailed support@vtpass.com; ticket 210680. Demo posted on X.
+- X post: https://x.com/Mxrshxll_on_X/status/2118639664181506300 (Tatum and Walrus both commented).
