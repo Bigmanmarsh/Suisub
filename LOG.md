@@ -50,3 +50,4 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Our target: Wed 4 Nov.
 - Called VTpass: sandbox first, then a form to go live. Emailed support@vtpass.com; ticket 210680. Demo posted on X.
 - X post: https://x.com/Mxrshxll_on_X/status/2118639664181506300 (Tatum and Walrus both commented).
 - Blog published: https://dev.to/bigmanmarsh/my-money-had-no-memory-so-i-built-an-agent-that-does-3bnp
+- SUBMITTED to Total Recall on 2026-11-07, before the 2026-11-10 17:00 UTC deadline.
