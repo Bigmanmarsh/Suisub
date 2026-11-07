@@ -21,7 +21,7 @@ Suisub lives in a Telegram chat, so there's no new app to learn.
 
 The moment that convinced me: when I moved the agent from my laptop to a free server with no saved files, it came back and restored all 12 memories from Walrus by itself, and it still knew how I like things done.
 
-**Tatum is how it sees my money.** It reads Sui Mainnet through Tatum's gateway to spot incoming USDC and check balances.
+**Tatum is how it sees my money.** It reads Sui Mainnet through Tatum's gateway to spot incoming USDC and check balances, and it gets the live USDC to naira rate from Tatum's Data API.
 
 **Agent payments are how it acts.** When it buys data, the shop answers "402: pay first". The agent pays in USDC on Sui using the Machine Payments Protocol, then tries again. The payment library pays whatever a server asks, so I added the agent's own check on the price and the recipient.
 
@@ -38,7 +38,9 @@ This is the part I care about most, because the agent visibly changes:
 | I keep buying plans of one length | It prefers that length |
 | My purchases cover at least a week | They replace the usage number I first gave it |
 
-In my own use, I told it I use about 5GB a month. After a purchase and "I ran out early", its estimate is now 7.8GB, and its suggestions moved up with it. A public "What it learned" page lists every memory and how it changed the agent: https://suisub.onrender.com
+In my own use, I told it I use about 5GB a month. After a purchase and "I ran out early", its estimate is now 7.8GB, and its suggestions moved up with it. A public "What it learned" page lists every memory and how it changed the agent, and shows the same agent with its memory switched off. With memory, it suggests N3000 for 8GB, because it knows I use about 7.8GB a month. Without memory, it suggests N20000 for 110GB. See it live: https://suisub.onrender.com
+
+You can also try the agent yourself, without a wallet: https://suisub.onrender.com/try runs its real learning code in your browser on my real memories, with no money involved.
 
 ## What went wrong, honestly
 

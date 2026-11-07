@@ -4,7 +4,15 @@ A Telegram money agent for people paid in crypto. It spots your pay on Sui, reme
 
 Built for the Total Recall hackathon (Tatum x Walrus Memory), Consumer Finance track.
 
-[Demo video](https://x.com/Mxrshxll_on_X/status/2118639664181506300) · [Blog post](https://dev.to/bigmanmarsh/my-money-had-no-memory-so-i-built-an-agent-that-does-3bnp) · [What it learned, live](https://suisub.onrender.com)
+[Demo video](https://x.com/Mxrshxll_on_X/status/2118639664181506300) · [Blog post](https://dev.to/bigmanmarsh/my-money-had-no-memory-so-i-built-an-agent-that-does-3bnp) · [What it learned, live](https://suisub.onrender.com) · **[Try it yourself](https://suisub.onrender.com/try)**
+
+## Try it in 30 seconds
+
+The bot only works for its owner, because it moves real money. So [suisub.onrender.com/try](https://suisub.onrender.com/try) runs the agent's real learning code (`src/brain.js`) in your browser, starting from the owner's real memories. Tap "100 USDC lands", approve three times, tap "I ran out early" or "Too expensive", and watch its behaviour change. Then tap "Start with no memory" to compare. Nothing there moves money or writes to Walrus.
+
+## Memory on vs off
+
+The [live page](https://suisub.onrender.com) shows the same agent with and without its Walrus memories, using live MTN prices. With memory, it suggests **N3000 8GB - 30 days** for about 7.8GB a month, which it learned from the owner. Without memory, it knows nothing about the owner's usage and suggests **N20000 110GB - 30 days**, which is more than six times the price.
 
 ## The problem
 
@@ -27,7 +35,7 @@ Delete the local files and the agent rebuilds what it knows from Walrus.
 | **Tatum Sui gateway** (GraphQL) | Spots incoming USDC and reads balances. |
 | **MPP on Sui** (`@suimpp/mpp`) | The agent pays a bundle shop per purchase. The shop answers `402 Payment Required`, and the agent pays in USDC and retries. |
 | **VTpass** | Live plan lists for MTN, Airtel, Glo and 9mobile, and bundle orders. |
-| **CoinGecko**, with ExchangeRate-API as backup | Live USDC to naira rate. |
+| **Tatum Data API**, with CoinGecko and ExchangeRate-API as backups | Live USDC to naira rate (`/v4/data/rate/symbol?symbol=USDC&basePair=NGN`). |
 
 ## Safety
 
@@ -42,7 +50,7 @@ Delete the local files and the agent rebuilds what it knows from Walrus.
 - **Network status.** See "Current status" below for what has run on testnet and Mainnet.
 - **If a bundle order fails after payment, the USDC isn't refunded automatically.** The bot says clearly that nothing was delivered.
 - **The shop pays VTpass from a naira balance funded by hand.** USDC isn't converted to naira automatically.
-- **Prices come from a public market rate plus a 1% margin.** Your own exchange's rate may differ.
+- **Prices come from a market rate (Tatum Data API) plus a 1% margin.** Your own exchange's rate may differ.
 - **It can't see your phone's data usage.** The estimate comes from what you tell it, what you buy, and whether you ran out.
 - **"Best" means best among the VTpass plans it can read,** not across the whole market. Plans with unusual names are skipped.
 - **The managed Walrus relayer can read memories while processing them,** so the agent doesn't store phone numbers or real names there.
