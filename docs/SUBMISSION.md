@@ -22,12 +22,12 @@ Deadline: Mon 10 Nov 2026, 17:00 UTC (18:00 Lagos). Field names come from Arena'
 
 Suisub is a Telegram money agent for people paid in crypto. It spots incoming USDC on Sui through Tatum, remembers your bills, savings habits and data usage on Walrus Memory Mainnet, and suggests data plans for MTN, Airtel, Glo and 9mobile with cheaper and bigger options. It starts by asking, learns from every answer and correction, and earns permission to act alone within limits you set. The agent pays for purchases itself over HTTP 402 using MPP on Sui. A "What it learned" page shows every memory and how it changed the agent.
 
-Status: UPDATE BEFORE SUBMITTING (Mainnet payments and real bundle delivery).
+Status: Walrus Memory writing on Mainnet (12+ memories). Savings and MPP agent payments are real USDC on Sui Mainnet. Tatum detects incoming pay on Mainnet. Runs online at https://suisub.onrender.com. Bundle delivery is simulated while VTpass API access is pending, and the bot says so every time.
 
 ## Experience building with Walrus
 
-Writing and recalling memories was simple once set up. The best moment was deleting the local copy and seeing the agent rebuild what it knew from Walrus. One rough edge: a first write sometimes returned a 404, so I added safe retries using idempotency keys.
+Writing and recalling memories was simple once set up, and the managed relayer meant I didn't need WAL or SUI for writes. The best moment was moving the agent to a fresh server and watching it restore all its memories from Walrus by itself. One rough edge: a first write sometimes returned a 404, so I added safe retries using idempotency keys.
 
 ## Experience building with the Tatum AI Builder
 
-I looked at the AI Builder's page but built the app in Claude Code, because I needed Walrus Memory and Sui, which the page didn't list. I used Tatum's Sui gateway for onchain reads. EDIT: only keep "looked at" if you actually did.
+I didn't build with the Tatum AI Builder. I built the app in Claude Code, because I needed Walrus Memory and Sui, which the AI Builder's page didn't list. I used Tatum's Sui gateway for all onchain reads, and it worked well once I learned that Mainnet only keeps recent history, so searches must start from a recent checkpoint.

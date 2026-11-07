@@ -1,31 +1,33 @@
-# I built a money agent that earns my trust
+# My money had no memory, so I built an agent that does
 
-I'm Marshall, a beginner builder in Lagos. I get paid in crypto, and I have two money habits I keep failing at.
+I'm Marshall, a beginner builder in Lagos. I get paid in crypto, and two things keep happening to me.
 
-When pay lands, I mean to move some to savings, then I forget and spend it. When my data runs out, I hunt for a deal all over again, as if I'd never bought data before.
+When pay lands, I tell myself I'll save part of it. A few days later, it's gone. And when my data runs out, I'm back on USSD hunting for a bundle, every month, from scratch.
 
-So for the Total Recall hackathon, I built Suisub: a Telegram agent that remembers these things for me.
+For the Total Recall hackathon, I built **Suisub**: a Telegram money agent that remembers what I do, and slowly earns permission to do it for me.
 
 ## What it does
 
 Suisub lives in a Telegram chat, so there's no new app to learn.
 
-- **It spots my pay.** When USDC lands on Sui, it messages me: "Your usual: save 20%. OK?"
-- **It remembers my bills** and reminds me before they're due.
-- **It suggests data plans from my monthly usage** on MTN, Airtel, Glo or 9mobile, with a cheaper and a bigger option.
-- **It can pay by itself,** but only once I've given it permission, and only within a limit.
+- **It spots my pay.** When USDC lands in the agent's wallet on Sui, it messages me: "Your usual: save 50%. OK?"
+- **It suggests data plans from my monthly usage** for MTN, Airtel, Glo or 9mobile, with a cheaper and a bigger option, priced at a live naira rate.
+- **It pays by itself.** When I tap Buy, the agent pays a small shop in USDC on Sui, with no card and no checkout.
+- **It earns trust.** After I approve the same thing three times in a row, it offers to do it alone, within a limit. One command, `/stop`, takes that back.
 
 ## How it uses Tatum and Walrus
 
-**Walrus Memory is the agent's brain.** Every lesson is stored as a memory on Walrus Mainnet: my savings rate, my bills, my network, how much data I use, and what I've allowed it to do. The agent's behaviour is rebuilt from those memories. In testing, I deleted its local copy, and it recovered what it knew from Walrus.
+**Walrus Memory is the agent's brain.** Every lesson is saved as a memory on Walrus Mainnet: my savings rate, my bills, my network, my data use, and what I've allowed it to do. The agent's behaviour is rebuilt from those memories every time it starts.
 
-**Tatum is how it sees my money.** It reads Sui through Tatum's gateway to spot incoming USDC and check balances.
+The moment that convinced me: when I moved the agent from my laptop to a free server with no saved files, it came back and restored all 12 memories from Walrus by itself, and it still knew how I like things done.
 
-**Agent payments are how it acts.** When it buys data, it asks a small shop for the bundle. The shop answers "402: pay first," and the agent pays in USDC on Sui using the Machine Payments Protocol, then tries again. The payment package pays whatever a server asks, so I added the agent's own check on the price and recipient.
+**Tatum is how it sees my money.** It reads Sui Mainnet through Tatum's gateway to spot incoming USDC and check balances.
+
+**Agent payments are how it acts.** When it buys data, the shop answers "402: pay first". The agent pays in USDC on Sui using the Machine Payments Protocol, then tries again. The payment library pays whatever a server asks, so I added the agent's own check on the price and the recipient.
 
 ## How it learned over time
 
-This is the part I care about most, because the agent behaves differently as it learns:
+This is the part I care about most, because the agent visibly changes:
 
 | When this happens | It changes like this |
 |---|---|
@@ -34,28 +36,29 @@ This is the part I care about most, because the agent behaves differently as it 
 | I tap "Too expensive" | It won't suggest that price or above again |
 | I tap "I ran out early" | It raises my usage estimate and suggests a bigger plan |
 | I keep buying plans of one length | It prefers that length |
-| My purchases span at least a week | They replace the usage number I first gave it |
+| My purchases cover at least a week | They replace the usage number I first gave it |
 
-A "What it learned" page lists every memory and shows how each one changed the agent.
+In my own use, I told it I use about 5GB a month. After a purchase and "I ran out early", its estimate is now 7.8GB, and its suggestions moved up with it. A public "What it learned" page lists every memory and how it changed the agent: https://suisub.onrender.com
 
-<!-- BEFORE PUBLISHING: add what really happened in Marshall's own use, with the final memory count and a screenshot of the page. -->
+## What went wrong, honestly
+
+**Testing with real money taught me something.** On the server, I copied the wrong address into the settings, and 2.34 USDC went to an old test address whose key no longer exists. That money is gone. Now the bot announces where savings and payments go every time it starts, and shows it in `/status`, so a wrong address can't stay hidden.
+
+**Mainnet showed me a difference testnet didn't.** Tatum's Mainnet node keeps only recent history, so the agent's first way of looking for payments failed silently. It now searches from a recent point and warns me if checks keep failing.
 
 ## What it can't do yet
 
-Honesty matters more to me than a perfect demo:
-
-<!-- BEFORE PUBLISHING: update the first two points to match what finally worked. -->
-- **Bundle delivery:** I couldn't get VTpass's API working in time, so the demo's bundle delivery is simulated, and the bot says so each time. The payment itself is real.
-- **Network:** memories are on Walrus Mainnet, and payments were tested on Sui testnet.
-- **Refunds:** if an order failed after payment, the USDC wouldn't come back automatically.
-- **Pricing:** prices use a public market rate plus 1%, so they can differ from what your exchange gives you.
-- **Data usage:** it can't see my phone's real usage. It estimates from what I tell it and what I buy.
-- **Who it's for:** it runs on my own computer, for one person.
+- **Bundle delivery is simulated.** I couldn't get the data provider's (VTpass) API access working in time. The USDC payment is real, on Mainnet, but no bundle reaches the line, and the bot says so every time.
+- **It can't see my phone's data usage.** It estimates from what I tell it and what I buy.
+- **Prices use a public market rate plus 1%,** so they can differ from what my exchange gives me.
+- **It serves one person.** Only the owner can use it.
 
 ## What's next
 
-Reliable bundle delivery, refunds for failed orders, WhatsApp support, and moving it off my laptop so it can stay on all the time.
+Real bundle delivery once VTpass access is approved, refunds if an order fails after payment, and WhatsApp support, since that's where my community lives.
 
-The code is open source: <!-- ADD GITHUB LINK -->
+The code is open source: https://github.com/Bigmanmarsh/Suisub
 
-Built with Tatum, Walrus Memory and Sui. @Tatum_io @WalrusFoundation
+<!-- ADD the X post link here once it's live -->
+
+Built with Tatum, Walrus Memory and Sui for Total Recall.
